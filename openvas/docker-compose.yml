@@ -212,6 +212,21 @@ services:
       - gvmd
       - ospd-openvas
 
+  haproxy:
+    image: haproxy:latest
+    container_name: openvas-haproxy
+    volumes:
+      - ./certs:/usr/local/etc/haproxy/certs:rw  # Directory to store the self-signed certs
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg  # Custom HAProxy config
+      - /etc/ssl/certs:/etc/ssl/certs  # SSL certificates location
+    ports:
+      - "127.0.0.1:443:443"  # Forward 443 for HTTPS
+    networks:
+      - external-network
+    entrypoint: [ "sh", "-c", "if [ ! -f /usr/local/etc/haproxy/certs/server.pem ]; then openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /usr/local/etc/haproxy/certs/server.key -out /usr/local/etc/haproxy/certs/server.crt -subj '/CN=localhost'; cat /usr/local/etc/haproxy/certs/server.key /usr/local/etc/haproxy/certs/server.crt > /usr/local/etc/haproxy/certs/server.pem; fi && haproxy -f /usr/local/etc/haproxy/haproxy.cfg" ]
+    depends_on:
+      - openvasd
+
 volumes:
   gpg_data_vol:
   scap_data_vol:
