@@ -1,0 +1,10 @@
+services:
+  python:
+    image: python:3.12
+    volumes:
+      - gvmd_socket_vol:/run/gvmd
+    command: tail -F anything
+
+volumes:
+  gvmd_socket_vol:
+    external: true

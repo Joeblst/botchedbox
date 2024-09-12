@@ -1,10 +1,9 @@
-from gvm.connections import TLSConnection
+from gvm.connections import UnixSocketConnection
 from gvm.protocols.gmp import Gmp
 
 def connect_to_gvm():
-    connection = TLSConnection(hostname='127.0.0.1', port=443)
+    connection = UnixSocketConnection(path='/var/run/gvmd.sock')
     with Gmp(connection) as gmp:
-        gmp.authenticate('admin', 'admin')
         version = gmp.get_version()
         print(f'Connected to GVM. Version: {version}')
 
