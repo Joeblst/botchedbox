@@ -1,9 +1,9 @@
 services:
   python:
-    image: python:3.12
+    build: .
     volumes:
       - gvmd_socket_vol:/run/gvmd
-    command: tail -F anything
+      - .:/app
 
 volumes:
   gvmd_socket_vol:
