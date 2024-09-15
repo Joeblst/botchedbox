@@ -4,7 +4,19 @@ services:
     volumes:
       - gvmd_socket_vol:/run/gvmd
       - .:/app
+    networks:
+      - external-network
+      - vulnerable-network
+      - control-pane-network
 
 volumes:
   gvmd_socket_vol:
+    external: true
+
+networks:
+  external-network:
+    external: true
+  vulnerable-network:
+    external: true
+  control-pane-network:
     external: true

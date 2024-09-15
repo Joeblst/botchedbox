@@ -1,0 +1,9 @@
+services:
+  firewall:
+    build: .
+    networks:
+    - vulnerable-network
+
+networks:
+  vulnerable-network:
+    external: true
