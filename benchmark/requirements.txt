@@ -1,1 +1,5 @@
 python-gvm
+python-nmap
+ansible-runner
+openai
+docutils-stubs
