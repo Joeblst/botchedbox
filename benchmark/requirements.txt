@@ -3,3 +3,5 @@ python-nmap
 ansible-runner
 openai
 docutils-stubs
+docker
+docker-compose
