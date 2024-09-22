@@ -3,5 +3,6 @@ python-nmap
 ansible-runner
 openai
 docutils-stubs
+pyyaml
 docker
-docker-compose
+django
