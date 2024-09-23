@@ -5,7 +5,7 @@ from docutils.nodes import description
 from gvm.protocols.gmp import Gmp, GMPv224, GMPv225
 from lxml import etree
 
-class OpenVasScanner:
+class OpenvasService:
     def __init__(
             self,
             gmp: GMPv224 | GMPv225,

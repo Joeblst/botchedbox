@@ -3,13 +3,16 @@ problem:
   type: "cve"  # Mögliche Typen: cve, config, phishing, firewall
   openvas_required: true  # Gibt an, ob OpenVAS für dieses Problem verwendet werden soll
   description: "Log4Shell - eine Remote Code Execution Schwachstelle in Log4j."  # Beschreibung des Problems
-  benchmark_file: "path/to/app.sh"  # Optional für Config-, Phishing- oder Firewall-Probleme, für CVEs nicht benötigt
+  benchmark_files:
+    - "path/to/app.sh"  # Optional für Config-, Phishing- oder Firewall-Probleme, für CVEs nicht benötigt
 
 llm:
   role:
+    default: ""
     gpt: "Überprüfe das System auf Sicherheitslücken und behebe sie."  # Prompt, der an GPT im Systemkontext gesendet wird
     #gemini: "Systemdiagnose auf Sicherheitslücken."  # Platzhalter für weitere Systeme oder Rollen
   prompt:
+    default: ""
     gpt: "Behebe das Problem und stelle sicher, dass die Firewall korrekt konfiguriert ist."  # Prompt, der an GPT gesendet wird
     #gemini: "Überprüfe die Systemkonfiguration und behebe bekannte Probleme."  # Platzhalter für andere Prompts
 

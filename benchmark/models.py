@@ -16,4 +16,5 @@ class Result(models.Model):
 
 class Benchmark(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
+    path = models.CharField(max_length=255)
     config = models.TextField(blank=True)

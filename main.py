@@ -43,10 +43,10 @@ def do_llm():
 
 
 if __name__ == "__main__":
-    default_config_path = os.path.join('..', 'config', 'config.yml')
+    default_config_path = os.path.join('', 'config', 'config.yml')
     with open(default_config_path, 'r') as default_config:
         DEFAULT_CONFIG = yaml.safe_load(default_config)
 
-    TESTCASES = os.listdir(os.path.join('..', 'testcases'))
+    TESTCASES = os.listdir(os.path.join('', 'testcases'))
 
 

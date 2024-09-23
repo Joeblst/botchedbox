@@ -6,3 +6,4 @@ docutils-stubs
 pyyaml
 docker
 django
+django-bootstrap-v5
