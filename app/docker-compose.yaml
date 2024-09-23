@@ -1,10 +1,12 @@
 services:
-  python:
+  botchedbox:
     build: .
     volumes:
       - gvmd_socket_vol:/run/gvmd
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8000:8000"
     networks:
       - external-network
       - vulnerable-network
