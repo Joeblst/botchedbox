@@ -1,15 +1,14 @@
 import time
-from xml.etree.ElementTree import ElementTree
 
-from docutils.nodes import description
-from gvm.protocols.gmp import Gmp, GMPv224, GMPv225
-from lxml import etree
+from gvm.protocols.gmp import GMPv224, GMPv225
+
 
 class OpenvasService:
     def __init__(
             self,
             gmp: GMPv224 | GMPv225,
-            target_ip: str,
+            target_name: str,
+            target_ips: [],
             username: str = "admin",
             password: str = "admin",
             ssh_username: str = "root",
@@ -26,7 +25,7 @@ class OpenvasService:
         self._target_id = None
         self._scan_config_id = None
         self._scanner_id = None
-        self.target_name = target_ip
+        self.target_name = target_name
 
         self._connect()
         self._ssh_credentials_id = self._get_or_create_ssh_credentials(
@@ -35,7 +34,7 @@ class OpenvasService:
             password=ssh_password
         )
         self._port_list_id = self._get_port_list_id(port_list_name)
-        self._target_id = self._get_or_create_target(target_ip)
+        self._target_id = self._get_or_create_target(target_ips)
         self._scan_config_id = self._get_scan_config(scan_config_name)
         self._scanner_id = self._get_scanner(scanner_name)
 
@@ -71,22 +70,22 @@ class OpenvasService:
         port_lists = self._gmp.get_port_lists(filter_string=f"name={name}")
         return port_lists.xpath(f"//port_list[name='{name}']/@id")[0]
 
-    def _get_target(self, host: str):
+    def _get_target(self, hosts: []):
         """Get existing target by host."""
-        target_name = f'Target_{host}'
+        target_name = f'Target_{"_".join(hosts)}'
         targets = self._gmp.get_targets(filter_string=f"name={target_name}")
         return targets.xpath("//target/@id")[0] if targets.xpath("//target") else None
 
-    def _get_or_create_target(self, host: str):
+    def _get_or_create_target(self, hosts: []):
         """Retrieve or create a target for the host."""
-        target_id = self._get_target(host)
+        target_id = self._get_target(hosts)
         if target_id:
             return target_id
-        print(f"Creating target for {host}...")
-        target_name = f'Target_{host}'
+        print(f"Creating target for {hosts}...")
+        target_name = f'Target_{"_".join(hosts)}'
         target_response = self._gmp.create_target(
             name=target_name,
-            hosts=[host],
+            hosts=hosts,
             port_list_id=self._port_list_id,
             ssh_credential_id=self._ssh_credentials_id
         )
@@ -132,7 +131,7 @@ class OpenvasService:
             status_response = self._gmp.get_task(task_id=task_id)
             status = status_response.xpath('//task/status/text()')[0]
             print(f"Scan status: {status}")
-            if status == "Running":
+            if status != "Done":
                 time.sleep(30)
 
         report_id = status_response.xpath('//last_report/report/@id')[0]

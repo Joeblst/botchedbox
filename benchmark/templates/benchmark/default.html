@@ -1,0 +1,15 @@
+{% extends 'pagelayout.html' %}
+{% load static %}
+
+{% block content %}
+    <div id="overview" class="mt-3">
+        <button class="btn btn-primary" id="start-button">Start Benchmark</button>
+        <div id="overview-table">
+            {% include 'benchmark/table.html' %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'benchmark.js' %}"></script>
+{% endblock %}

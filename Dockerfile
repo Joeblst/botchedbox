@@ -6,7 +6,9 @@ RUN apt update && \
     apt install -y \
     nmap \
     ansible \
-    sshpass && \
+    sshpass  \
+    docker.io \
+    docker-compose && \
     apt clean
 
 COPY . /app
