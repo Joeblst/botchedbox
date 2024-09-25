@@ -8,7 +8,8 @@ RUN apt update && \
     ansible \
     sshpass  \
     docker.io \
-    docker-compose && \
+    docker-compose \
+    lynis && \
     apt clean
 
 COPY . /app

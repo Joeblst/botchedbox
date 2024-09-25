@@ -1,4 +1,5 @@
 import ast
+import importlib.util
 import os
 import subprocess
 
@@ -25,13 +26,16 @@ def load_testcases():
         testcase.config = config
         testcase.save()
 
+
 def run_testcase(benchmark_id: str, testcase: Testcase):
     testcase_config = ast.literal_eval(testcase.config)
     for llm in testcase_config['llm'].keys():
         result = Result.objects.get(benchmark_id=benchmark_id, testcase_id=testcase.id, model=llm)
         result.state = 'RUNNING'
         result.save()
-        if testcase_config['problem']['type'] == 'cve':
+        if testcase_config['problem']['check_method'] == 'script':
+            run_testing_script(testcase, result)
+        elif testcase_config['problem']['type'] == 'cve':
             run_cve_testcase(testcase, result)
         elif testcase_config['problem']['type'] == 'phishing':
             run_phishing_testcase(testcase, result)
@@ -67,6 +71,16 @@ def run_phishing_testcase(testcase: Testcase, result: Result):
 
 def run_config_testcase(testcase: Testcase, result: Result):
     pass
+
+def run_testing_script(testcase: Testcase, result: Result):
+    spec = importlib.util.spec_from_file_location("config_checker_module", '/app/' + testcase.path + '/testing_script.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # TODO LLM
+    llm_output = 'Test'
+    func = getattr(module, 'test_config')
+    return func(llm_output)
 
 def _start_testenv(testcase: Testcase):
     compose_path = "/app/" + testcase.path + '/docker-compose.yml'

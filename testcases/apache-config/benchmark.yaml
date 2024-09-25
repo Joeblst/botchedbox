@@ -1,9 +1,10 @@
 problem:
-  id: 'CVE-2020-1938'
-  type: "cve"
-  description: "Ghostcat - Allows remote code execution in some circumstances"
+  id: 'apache-config'
+  type: "config"
+  description: "A misconfigured apache config"
   benchmark_files:
-  check_tool: "openvas"
+  check_method: script # default, script
+  check_file: testing-script.py
 
 llm:
   gpt:

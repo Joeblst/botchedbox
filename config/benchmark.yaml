@@ -3,6 +3,8 @@ problem:
   type: "cve"  # Mögliche Typen: cve, config, phishing, firewall
   description: "Log4Shell - eine Remote Code Execution Schwachstelle in Log4j."  # Beschreibung des Problems
   benchmark_files: "/path/to/config"
+  check_method: default # default, script
+  check_file:
 
 llm:
   gpt:
