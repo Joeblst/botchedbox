@@ -1,6 +1,54 @@
 import re
 
-def test_config(llm_output):
+import subprocess
+import tempfile
+import os
+
+def validate_apache_config(config: str) -> bool:
+    """Validate Apache config using a Docker container."""
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.conf') as temp_file:
+        temp_file.write(config.encode())
+        temp_file_path = temp_file.name
+
+        container_name = "apache_temp"
+    try:
+        # Start a temporary Apache container
+        subprocess.run(
+            ["docker", "run", "--name", container_name, "-d", "httpd:alpine"],
+            check=True
+        )
+
+        # Copy the config file into the container
+        subprocess.run(
+            ["docker", "cp", temp_file_path, f"{container_name}:/usr/local/apache2/conf/httpd.conf"],
+            check=True
+        )
+
+        # Check the config syntax inside the container
+        result = subprocess.run(
+            ["docker", "exec", container_name, "apachectl", "-t"],
+            capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            print(f"Invalid Apache configuration: {result.stderr.strip()}")
+            return False
+        else:
+            print("Apache configuration is valid.")
+            return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error during Apache config validation: {e}")
+        return False
+    finally:
+        # Clean up: Stop and remove the container
+        subprocess.run(["docker", "rm", "-f", container_name], check=False)
+        # Remove the temporary config file
+        os.remove(temp_file_path)
+
+def test_config(llm_output: str) -> int:
+
+    if not validate_apache_config(llm_output):
+        return 0
 
     score = 100
     penalty = 100 / 6

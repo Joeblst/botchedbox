@@ -9,8 +9,7 @@ RUN apt update && \
     sshpass  \
     docker.io \
     docker-compose \
-    lynis && \
-    apt clean
+    && apt clean
 
 COPY . /app
 RUN pip install -r requirements.txt
