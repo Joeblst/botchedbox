@@ -1,0 +1,11 @@
+problem:
+  id:
+  type: "cve"  # Mögliche Typen: cve, config, phishing, firewall
+  description: "Example Description"  # Beschreibung des Problems
+  check_method: script #script, openvas
+  check_script: "/path/to/script"
+
+llm:
+  example-llm:
+    role: "Überprüfe das System auf Sicherheitslücken und behebe sie."
+    prompt: "Behebe das Problem und stelle sicher, dass die Firewall korrekt konfiguriert ist."

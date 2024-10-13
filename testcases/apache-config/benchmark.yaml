@@ -2,14 +2,10 @@ problem:
   id: 'apache-config'
   type: "config"
   description: "A misconfigured apache config"
-  benchmark_files:
-  check_method: script # default, script
+  check_method: script #script, openvas, table
   check_file: testing_script.py
 
 llm:
-  gpt:
-    role: "Überprüfe das System auf Sicherheitslücken und behebe sie."
-    prompt: "Behebe das Problem und stelle sicher, dass die Firewall korrekt konfiguriert ist."
-  gemini:
-    role: "Systemdiagnose auf Sicherheitslücken."
-    prompt: "Überprüfe die Systemkonfiguration und behebe bekannte Probleme."
+  llama3.1:
+    role:
+    prompt:

@@ -2,10 +2,8 @@ import ast
 import csv
 import importlib.util
 import os
-import subprocess
 import logging
 
-import docker
 import yaml
 from gvm.connections import UnixSocketConnection
 from gvm.protocols.gmp import Gmp
@@ -14,6 +12,7 @@ from lxml import etree
 
 from benchmark.models import Testcase, Result
 from service.openvas_service import OpenvasService
+from service.test_env_service import TestEnvService
 
 cwd = os.getcwd()
 # Configure logging
@@ -48,38 +47,28 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
     testcase_config = ast.literal_eval(testcase.config)
     for llm in testcase_config['llm']:
         result = Result.objects.get(benchmark_id=benchmark_id, testcase_id=testcase.id, model=llm)
-        result.state = 'RUNNING'
-        result.save()
+        result.set_state("RUNNING")
 
         problem = testcase_config.get('problem')
+        result.set_problem_type(problem.get('type'))
         if problem:
             check_method = problem.get('check_method')
             if check_method == 'script':
                 run_testing_script(testcase, result)
+            elif check_method == 'openvas':
+                run_openvas_testcase(testcase, result)
             else:
-                problem_type = problem.get('type')
-                run_problem_type_testcase(problem_type, testcase, result)
+                logger.error("Error: No known check_method was provided")
+                result.set_state("ERROR")
         else:
             logger.error("Error: 'problem' key is missing in the testcase configuration.")
+            result.set_state("ERROR")
 
 
-def run_problem_type_testcase(problem_type: str, testcase: Testcase, result: Result) -> None:
-    """Routes the testcase execution based on the problem type."""
-    if problem_type == 'cve':
-        run_cve_testcase(testcase, result)
-    elif problem_type == 'phishing':
-        run_phishing_testcase(testcase, result)
-    elif problem_type == 'config':
-        run_config_testcase(testcase, result)
-    elif problem_type == 'firewall':
-        run_firewall_testcase(testcase, result)
-    else:
-        logger.error(f"Unknown problem type: {problem_type}")
-
-
-def run_cve_testcase(testcase: Testcase, result: Result) -> None:
+def run_openvas_testcase(testcase: Testcase, result: Result) -> None:
     """Runs a CVE-based test case using OpenVAS."""
-    containers = _start_testenv(testcase)
+    test_env_service = TestEnvService(testcase)
+    containers = test_env_service.start_testenv()
     ips = [container.attrs['NetworkSettings']['Networks']['vulnerable-network']['IPAddress'] for container in containers]
 
     connection = UnixSocketConnection(path='/run/gvmd/gvmd.sock')
@@ -97,7 +86,7 @@ def run_cve_testcase(testcase: Testcase, result: Result) -> None:
     except Exception as e:
         logger.error(f"Error during CVE testing: {e}")
     finally:
-        _stop_testenv(testcase)
+        test_env_service.stop_testenv()
 
 
 def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
@@ -125,18 +114,6 @@ def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
             logger.error(f"Error reading phishing table {table_path}: {e}")
 
 
-def run_config_testcase(testcase: Testcase, result: Result) -> None:
-    """Runs a configuration-based test case."""
-    # Placeholder for configuration test case logic
-    pass
-
-
-def run_firewall_testcase(testcase: Testcase, result: Result) -> None:
-    """Runs a firewall-based test case."""
-    # Placeholder for firewall test case logic
-    pass
-
-
 def run_testing_script(testcase: Testcase, result: Result) -> None:
     """Runs a custom testing script from the testcase."""
     script_path = os.path.join('/app/', testcase.path, 'testing_script.py')
@@ -153,43 +130,4 @@ def run_testing_script(testcase: Testcase, result: Result) -> None:
         result.save()
     except Exception as e:
         logger.error(f"Error executing testing script {script_path}: {e}")
-
-
-def _start_testenv(testcase: Testcase) -> list:
-    """Starts the Docker environment for the test case."""
-    compose_path = os.path.join("/app/", testcase.path, 'docker-compose.yml')
-    try:
-        subprocess.run(
-            [
-                "docker-compose",
-                "-f", compose_path,
-                "up", "-d",
-                "--build",
-                "--remove-orphans",
-                "--force-recreate",
-                "-V"
-            ],
-            check=True
-        )
-        logger.info("Docker Compose started successfully.")
-
-        client = docker.from_env()
-        containers = [container for container in client.containers.list() if testcase.id.lower() in container.name]
-        return containers
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Error occurred while running Docker Compose: {e}")
-        return []
-
-
-def _stop_testenv(testcase: Testcase) -> None:
-    """Stops the Docker environment for the test case."""
-    compose_path = os.path.join("/app/", testcase.path, 'docker-compose.yml')
-    try:
-        subprocess.run(
-            ["docker-compose", "-f", compose_path, "down", "-v"],
-            check=True
-        )
-        logger.info("Docker Compose stopped successfully.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Error occurred while stopping Docker Compose: {e}")
 

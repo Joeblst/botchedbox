@@ -2,7 +2,6 @@ problem:
   id: Phishing-By-Text
   type: "phishing"  # Mögliche Typen: cve, config, phishing, firewall
   description: "A collection of phishing an legitimate mails. Detection is text-based"  # Beschreibung des Problems
-  benchmark_files: []
 
 llm:
   gpt:

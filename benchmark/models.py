@@ -6,6 +6,7 @@ from django.db import models
 class Result(models.Model):
     benchmark_id = models.CharField(max_length=100)
     testcase_id = models.CharField(max_length=100)
+    problem_type = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     response = models.TextField(blank=True, null=True)
     score = models.IntegerField(default=0, blank=True, null=True)
@@ -14,6 +15,14 @@ class Result(models.Model):
     timestamp = models.DateTimeField(default=datetime.now)
     class Meta:
         unique_together = ['benchmark_id', 'testcase_id', 'model']
+
+    def set_state(self, state):
+        self.state = state
+        self.save()
+
+    def set_problem_type(self, problem_type):
+        self.problem_type = problem_type
+        self.save()
 
 
 class Testcase(models.Model):
