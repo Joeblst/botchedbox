@@ -1,3 +1,4 @@
+import ast
 from datetime import datetime
 
 from django.db import models
@@ -29,3 +30,6 @@ class Testcase(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
     path = models.CharField(max_length=255)
     config = models.TextField(blank=True)
+
+    def get_config(self):
+        return ast.literal_eval(self.config)

@@ -7,5 +7,5 @@ problem:
 
 llm:
   llama3.1:
-    role:
-    prompt:
+    system: "You provide only the apache config file and nothing else to the user"
+    prompt: "Fix the weaknesses in the following apache config file"

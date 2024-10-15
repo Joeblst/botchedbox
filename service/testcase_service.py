@@ -3,6 +3,8 @@ import csv
 import importlib.util
 import os
 import logging
+import time
+from curses.ascii import isspace
 
 import yaml
 from gvm.connections import UnixSocketConnection
@@ -11,6 +13,7 @@ from gvm.transforms import EtreeTransform
 from lxml import etree
 
 from benchmark.models import Testcase, Result
+from service.llm_service import LlmService
 from service.openvas_service import OpenvasService
 from service.test_env_service import TestEnvService
 
@@ -21,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def load_testcases() -> None:
     """Loads test cases from the '../testcases' directory and saves them to the database."""
-    testcases_path = os.path.join('..', 'testcases')
+    testcases_path = os.path.join('testcases')
     for testcase_dir in os.listdir(testcases_path):
         config_path = os.path.join(testcases_path, testcase_dir, 'benchmark.yaml')
         if not os.path.isfile(config_path):
@@ -44,7 +47,7 @@ def load_testcases() -> None:
 
 def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
     """Executes the given testcase based on its configuration."""
-    testcase_config = ast.literal_eval(testcase.config)
+    testcase_config = testcase.get_config()
     for llm in testcase_config['llm']:
         result = Result.objects.get(benchmark_id=benchmark_id, testcase_id=testcase.id, model=llm)
         result.set_state("RUNNING")
@@ -91,7 +94,7 @@ def run_openvas_testcase(testcase: Testcase, result: Result) -> None:
 
 def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
     """Runs a phishing test case based on the configuration."""
-    test_config = ast.literal_eval(testcase.config)
+    test_config = testcase.get_config()
     table_path = test_config['phishing'].get('table')
     if table_path:
         try:
@@ -116,18 +119,35 @@ def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
 
 def run_testing_script(testcase: Testcase, result: Result) -> None:
     """Runs a custom testing script from the testcase."""
-    script_path = os.path.join('/app/', testcase.path, 'testing_script.py')
+    script_path = os.path.join(testcase.path, 'testing_script.py')
+    test_config = testcase.get_config()
     try:
-        spec = importlib.util.spec_from_file_location("config_checker_module", script_path)
+        spec = importlib.util.spec_from_file_location("checker_module", script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        # TODO: Integrate LLM output here
-        llm_output = 'Test'
-        func = getattr(module, 'test_config')
-        result.score = func(llm_output)
-        result.state = 'FINISHED'
-        result.save()
+        llm_service = LlmService()
+        instances = llm_service.get_instances()
+        for key, value in instances.items():
+            system = test_config.get(key).get('system')
+            prompt = test_config.get(key).get('prompt')
+            system = system if system and not isspace(system) else test_config.get('default').get('system')
+            prompt = prompt if prompt and not isspace(prompt) else test_config.get('default').get('prompt')
+            start = time.time()
+            response = value.chat.completions.create(
+                model=key,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            end = time.time()
+            func = getattr(module, 'test_config')
+            result.duration = end - start
+            result.response = response.choices[0].message.content
+            result.score = func(result.response)
+            result.state = 'FINISHED'
+            result.save()
     except Exception as e:
         logger.error(f"Error executing testing script {script_path}: {e}")
 

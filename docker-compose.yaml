@@ -11,10 +11,19 @@ services:
       - external-network
       - vulnerable-network
       - control-pane-network
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_vol:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - external-network
 
 volumes:
   gvmd_socket_vol:
     external: true
+  ollama_vol:
 
 networks:
   external-network:
