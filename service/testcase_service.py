@@ -1,9 +1,7 @@
-import ast
 import csv
 import importlib.util
 import os
 import logging
-import time
 from curses.ascii import isspace
 
 import yaml
@@ -24,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def load_testcases() -> None:
     """Loads test cases from the '../testcases' directory and saves them to the database."""
-    testcases_path = os.path.join('testcases')
+    testcases_path = os.path.join(cwd, 'testcases')
     for testcase_dir in os.listdir(testcases_path):
         config_path = os.path.join(testcases_path, testcase_dir, 'benchmark.yaml')
         if not os.path.isfile(config_path):
@@ -39,7 +37,7 @@ def load_testcases() -> None:
 
         testcase = Testcase(
             id=config['problem']['id'],
-            path=os.path.join('testcases', testcase_dir),
+            path=os.path.join(testcases_path, testcase_dir),
             config=config
         )
         testcase.save()
@@ -119,8 +117,9 @@ def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
 
 def run_testing_script(testcase: Testcase, result: Result) -> None:
     """Runs a custom testing script from the testcase."""
-    script_path = os.path.join(testcase.path, 'testing_script.py')
     test_config = testcase.get_config()
+    llm_prompt_config = test_config.get('llm')
+    script_path = os.path.join(testcase.path, test_config.get('problem').get('check_script'))
     try:
         spec = importlib.util.spec_from_file_location("checker_module", script_path)
         module = importlib.util.module_from_spec(spec)
@@ -128,23 +127,16 @@ def run_testing_script(testcase: Testcase, result: Result) -> None:
 
         llm_service = LlmService()
         instances = llm_service.get_instances()
-        for key, value in instances.items():
-            system = test_config.get(key).get('system')
-            prompt = test_config.get(key).get('prompt')
-            system = system if system and not isspace(system) else test_config.get('default').get('system')
-            prompt = prompt if prompt and not isspace(prompt) else test_config.get('default').get('prompt')
-            start = time.time()
-            response = value.chat.completions.create(
-                model=key,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            end = time.time()
-            func = getattr(module, 'test_config')
-            result.duration = end - start
-            result.response = response.choices[0].message.content
+        for key, llm_prompt in instances.items():
+            if key == 'default':
+                continue
+            system = llm_prompt_config.get(key).get('system')
+            prompt = llm_prompt_config.get(key).get('prompt')
+            system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
+            prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
+            files = testcase.get_files()
+            func = getattr(module, 'do_test')
+            result.response, result.duration = llm_prompt.execute_timed_prompt(system, prompt, files)
             result.score = func(result.response)
             result.state = 'FINISHED'
             result.save()

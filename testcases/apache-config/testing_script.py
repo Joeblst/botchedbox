@@ -45,7 +45,7 @@ def validate_apache_config(config: str) -> bool:
         # Remove the temporary config file
         os.remove(temp_file_path)
 
-def test_config(llm_output: str) -> int:
+def do_test(llm_output: str) -> int:
 
     if not validate_apache_config(llm_output):
         return 0

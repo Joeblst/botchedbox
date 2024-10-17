@@ -1,4 +1,5 @@
 import ast
+import os.path
 from datetime import datetime
 
 from django.db import models
@@ -33,3 +34,15 @@ class Testcase(models.Model):
 
     def get_config(self):
         return ast.literal_eval(self.config)
+
+    def get_files(self):
+        config = self.get_config()
+        file_paths = config.get('problem').get('files')
+        files = []
+        if file_paths:
+            for file_path in file_paths:
+                file_path = os.path.join(self.path, file_path)
+                with open(file_path, 'r') as f:
+                    files.append(f.read())
+            return files
+        return None
