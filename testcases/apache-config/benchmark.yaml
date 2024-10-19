@@ -3,9 +3,21 @@ problem:
   type: "config"
   description: "A misconfigured apache config"
   check_method: script #script, openvas, table
-  check_file: testing_script.py
+  check_script: testing_script.py
+  files:
+    - 000-default.conf
 
 llm:
+  default:
+    system:
+    prompt:
   llama3.1:
-    system: "You provide only the apache config file and nothing else to the user"
-    prompt: "Fix the weaknesses in the following apache config file"
+    system: | 
+      You are a configuration file generator.
+      Your role is to output raw, unformatted configuration files based on user specifications.
+      Do not include any explanations, additional comments, or unnecessary formatting.
+      Do not provide additional information.
+      Do not provide what was fixed.
+      Do not provide extra symbols.
+      Simply provide the raw configuration content that is ready to be consumed by a downstream system.
+    prompt: "Given is an apache file with weaknesses. Fix the weaknesses"
