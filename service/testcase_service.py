@@ -11,7 +11,7 @@ from gvm.transforms import EtreeTransform
 from lxml import etree
 
 from benchmark.models import Testcase, Result
-from service.llm_service import LlmService
+from service.llm_service import LlmService, LlmInstance
 from service.openvas_service import OpenvasService
 from service.test_env_service import TestEnvService
 
@@ -19,6 +19,7 @@ cwd = os.getcwd()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+llm_service = LlmService()
 
 def load_testcases() -> None:
     """Loads test cases from the '../testcases' directory and saves them to the database."""
@@ -46,7 +47,10 @@ def load_testcases() -> None:
 def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
     """Executes the given testcase based on its configuration."""
     testcase_config = testcase.get_config()
-    for llm in testcase_config['llm']:
+    for llm in testcase_config.get('llm'):
+        if llm == 'default':
+            continue
+        llm_instance = llm_service.get_instance(llm)
         result = Result.objects.get(benchmark_id=benchmark_id, testcase_id=testcase.id, model=llm)
         result.set_state("RUNNING")
 
@@ -55,9 +59,9 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
         if problem:
             check_method = problem.get('check_method')
             if check_method == 'script':
-                run_testing_script(testcase, result)
+                run_testing_script(testcase, result, llm_instance)
             elif check_method == 'openvas':
-                run_openvas_testcase(testcase, result)
+                run_openvas_testcase(testcase, result, llm_instance)
             else:
                 logger.error("Error: No known check_method was provided")
                 result.set_state("ERROR")
@@ -66,7 +70,7 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
             result.set_state("ERROR")
 
 
-def run_openvas_testcase(testcase: Testcase, result: Result) -> None:
+def run_openvas_testcase(testcase: Testcase, result: Result, llm_instance) -> None:
     """Runs a CVE-based test case using OpenVAS."""
     test_env_service = TestEnvService(testcase)
     containers = test_env_service.start_testenv()
@@ -90,7 +94,7 @@ def run_openvas_testcase(testcase: Testcase, result: Result) -> None:
         test_env_service.stop_testenv()
 
 
-def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
+def run_phishing_testcase(testcase: Testcase, result: Result, llm_instance) -> None:
     """Runs a phishing test case based on the configuration."""
     test_config = testcase.get_config()
     table_path = test_config['phishing'].get('table')
@@ -115,7 +119,7 @@ def run_phishing_testcase(testcase: Testcase, result: Result) -> None:
             logger.error(f"Error reading phishing table {table_path}: {e}")
 
 
-def run_testing_script(testcase: Testcase, result: Result) -> None:
+def run_testing_script(testcase: Testcase, result: Result, llm_instance: LlmInstance) -> None:
     """Runs a custom testing script from the testcase."""
     test_config = testcase.get_config()
     llm_prompt_config = test_config.get('llm')
@@ -125,21 +129,17 @@ def run_testing_script(testcase: Testcase, result: Result) -> None:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        llm_service = LlmService()
-        instances = llm_service.get_instances()
-        for key, llm_prompt in instances.items():
-            if key == 'default':
-                continue
-            system = llm_prompt_config.get(key).get('system')
-            prompt = llm_prompt_config.get(key).get('prompt')
-            system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
-            prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
-            files = testcase.get_files()
-            func = getattr(module, 'do_test')
-            result.response, result.duration = llm_prompt.execute_timed_prompt(system, prompt, files)
-            result.score = func(result.response)
-            result.state = 'FINISHED'
-            result.save()
+        model = llm_instance.get_model()
+        system = llm_prompt_config.get(model).get('system')
+        prompt = llm_prompt_config.get(model).get('prompt')
+        system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
+        prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
+        files = testcase.get_files()
+        func = getattr(module, 'do_test')
+        result.response, result.duration = llm_instance.execute_timed_prompt(system, prompt, files)
+        result.score = func(result.response)
+        result.state = 'FINISHED'
+        result.save()
     except Exception as e:
         logger.error(f"Error executing testing script {script_path}: {e}")
 

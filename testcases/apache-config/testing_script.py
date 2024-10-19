@@ -1,16 +1,16 @@
 import re
-
+import os
 import subprocess
 import tempfile
-import os
 
 def validate_apache_config(config: str) -> bool:
-    """Validate Apache config using a Docker container."""
+    """Validate Apache site config using a Docker container."""
     with tempfile.NamedTemporaryFile(delete=False, suffix='.conf') as temp_file:
         temp_file.write(config.encode())
         temp_file_path = temp_file.name
 
-        container_name = "apache_temp"
+    container_name = "apache_temp"
+
     try:
         # Start a temporary Apache container
         subprocess.run(
@@ -18,9 +18,19 @@ def validate_apache_config(config: str) -> bool:
             check=True
         )
 
-        # Copy the config file into the container
+        # Copy the site config file into the container's conf/extra directory
         subprocess.run(
-            ["docker", "cp", temp_file_path, f"{container_name}:/usr/local/apache2/conf/httpd.conf"],
+            ["docker", "cp", temp_file_path, f"{container_name}:/usr/local/apache2/conf/extra/site.conf"],
+            check=True
+        )
+
+        # Modify the httpd.conf inside the container to include the site config
+        include_line = 'Include conf/extra/site.conf\n'
+        subprocess.run(
+            [
+                "docker", "exec", container_name, "sh", "-c",
+                f"echo '{include_line}' >> /usr/local/apache2/conf/httpd.conf"
+            ],
             check=True
         )
 
@@ -44,6 +54,7 @@ def validate_apache_config(config: str) -> bool:
         subprocess.run(["docker", "rm", "-f", container_name], check=False)
         # Remove the temporary config file
         os.remove(temp_file_path)
+
 
 def do_test(llm_output: str) -> int:
 

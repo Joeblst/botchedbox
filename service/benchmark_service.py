@@ -10,6 +10,8 @@ executor = ThreadPoolExecutor(max_workers=multiprocessing.cpu_count())
 def run_benchmark(benchmark_id: str):
     for testcase in Testcase.objects.all():
         for llm in ast.literal_eval(testcase.config)['llm'].keys():
+            if llm == 'default':
+                continue
             result = Result()
             result.benchmark_id = benchmark_id
             result.testcase_id = testcase.id

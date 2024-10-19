@@ -6,16 +6,19 @@ import yaml
 from openai import OpenAI
 
 
-class LlmPrompt:
+class LlmInstance:
 
     def __init__(self, model: str, client: OpenAI):
         self.client = client
         self.model = model
 
+    def get_model(self):
+        return self.model
+
     def execute_timed_prompt(self, system: str, prompt: str, files: list = None):
         if files is not None and len(files) > 0:
-            prompt_appendix = '\n\n---\n\n'.join(files)
-            prompt = '\n\n---\n\n'.join([prompt, prompt_appendix])
+            prompt_appendix = '\n\n\n'.join(files)
+            prompt = '\n\n\n'.join([prompt, prompt_appendix])
 
         start = time.time()
         response = self.client.chat.completions.create(
@@ -39,7 +42,7 @@ class LlmService:
     def _register_instances(self):
         instances = {}
         for key, value in self.config["credentials"].items():
-            question = LlmPrompt(
+            question = LlmInstance(
                 key,
                 OpenAI(
                     base_url=value["base_url"],
@@ -49,8 +52,8 @@ class LlmService:
             instances[key] = question
         return instances
 
-    def get_instances(self) -> dict[str, LlmPrompt]:
-        return self.instances
+    def get_instance(self, model: str) -> LlmInstance:
+        return self.instances.get(model)
 
 
 
