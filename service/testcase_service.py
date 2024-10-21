@@ -11,6 +11,7 @@ from gvm.transforms import EtreeTransform
 from lxml import etree
 
 from benchmark.models import Testcase, Result
+from service.ansible_service import run_ansible_playbook
 from service.llm_service import LlmService, LlmInstance
 from service.openvas_service import OpenvasService
 from service.test_env_service import TestEnvService
@@ -74,24 +75,35 @@ def run_openvas_testcase(testcase: Testcase, result: Result, llm_instance) -> No
     """Runs a CVE-based test case using OpenVAS."""
     test_env_service = TestEnvService(testcase)
     containers = test_env_service.start_testenv()
-    ips = [container.attrs['NetworkSettings']['Networks']['vulnerable-network']['IPAddress'] for container in containers]
-
+    ips = [
+        container.attrs['NetworkSettings']['Networks']['vulnerable-network']['IPAddress'] for container in containers
+    ]
     connection = UnixSocketConnection(path='/run/gvmd/gvmd.sock')
     try:
         with Gmp(connection, transform=EtreeTransform()) as gmp:
             scanner = OpenvasService(gmp=gmp, target_name=testcase.id, target_ips=ips)
-            task_id = scanner.create_task()
-            scanner.start_scan(task_id)
-            report_id = scanner.retrieve_latest_report_id(task_id)
-            report = scanner.retrieve_report(report_id)
-            ref = report.xpath(f'//ref[@id="{testcase.id}"]')[0]
-            result_data = ref.xpath('ancestor::result')[0]
-            logger.info(etree.tostring(result_data))
-            # TODO: Handle LLM fix logic here
+            result_data = _run_openvas_scan(testcase, scanner)
+            tags_info = "Information about the Problem: " + result_data.xpath('//tags/text()')[0] if result_data.xpath('//tags/text()') else None
+            solution_info = "Information about the Solution: " + result_data.xpath('//solution/text()')[0] if result_data.xpath('//tags/text()') else None
+            host_info = "The hosts are: " + ", ".join(ips)
+            prompt_appendix = "\n\n".join([host_info, tags_info, solution_info])
+            run_llm_prompt(testcase, result, llm_instance, prompt_appendix)
+            run_ansible_playbook(result)
+            result_data = _run_openvas_scan(testcase, scanner)
+            result.state = 'FINISHED'
+            result.save()
     except Exception as e:
         logger.error(f"Error during CVE testing: {e}")
     finally:
         test_env_service.stop_testenv()
+
+def _run_openvas_scan(testcase: Testcase, scanner: OpenvasService):
+    task_id = scanner.create_task()
+    scanner.start_scan(task_id)
+    report_id = scanner.retrieve_latest_report_id(task_id)
+    report = scanner.retrieve_report(report_id)
+    ref = report.xpath(f'//ref[@id="{testcase.id}"]')[0]
+    return ref.xpath('ancestor::result')[0]
 
 
 def run_phishing_testcase(testcase: Testcase, result: Result, llm_instance) -> None:
@@ -100,7 +112,7 @@ def run_phishing_testcase(testcase: Testcase, result: Result, llm_instance) -> N
     table_path = test_config['phishing'].get('table')
     if table_path:
         try:
-            csv_file_path = os.path.join('/app/', testcase.path, table_path)
+            csv_file_path = os.path.join(testcase.path, table_path)
             with open(csv_file_path, newline='', encoding='utf-8') as file:
                 reader = csv.DictReader(
                     file,
@@ -122,24 +134,27 @@ def run_phishing_testcase(testcase: Testcase, result: Result, llm_instance) -> N
 def run_testing_script(testcase: Testcase, result: Result, llm_instance: LlmInstance) -> None:
     """Runs a custom testing script from the testcase."""
     test_config = testcase.get_config()
-    llm_prompt_config = test_config.get('llm')
     script_path = os.path.join(testcase.path, test_config.get('problem').get('check_script'))
     try:
         spec = importlib.util.spec_from_file_location("checker_module", script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-
-        model = llm_instance.get_model()
-        system = llm_prompt_config.get(model).get('system')
-        prompt = llm_prompt_config.get(model).get('prompt')
-        system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
-        prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
-        files = testcase.get_files()
         func = getattr(module, 'do_test')
-        result.response, result.duration = llm_instance.execute_timed_prompt(system, prompt, files)
+        run_llm_prompt(testcase, func, llm_instance)
         result.score = func(result.response)
         result.state = 'FINISHED'
         result.save()
     except Exception as e:
         logger.error(f"Error executing testing script {script_path}: {e}")
 
+def run_llm_prompt(testcase: Testcase, result: Result, llm_instance: LlmInstance, prompt_appendix: str = None):
+    llm_prompt_config = testcase.get_config().get('llm')
+    model = llm_instance.get_model()
+    files = testcase.get_files()
+    system = llm_prompt_config.get(model).get('system') if llm_prompt_config.get(model) else None
+    prompt = llm_prompt_config.get(model).get('prompt') if llm_prompt_config.get(model) else None
+    system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
+    prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
+    prompt = "\n\n".join([prompt, prompt_appendix])
+    result.response, result.duration = llm_instance.execute_timed_prompt(system, prompt, files)
+    result.save()

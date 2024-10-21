@@ -9,9 +9,6 @@ problem:
 
 llm:
   default:
-    system:
-    prompt:
-  llama3.1:
     system: | 
       You are a configuration file generator.
       Your role is to output raw, unformatted configuration files based on user specifications.
@@ -21,3 +18,5 @@ llm:
       Do not provide extra symbols.
       Simply provide the raw configuration content that is ready to be consumed by a downstream system.
     prompt: "Given is an apache file with weaknesses. Fix the weaknesses"
+  llama3.1:
+  gpt-3.5-turbo-0125:
