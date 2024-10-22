@@ -78,7 +78,7 @@ def run_openvas_testcase(testcase: Testcase, result: Result, llm_instance) -> No
     test_env_service = TestEnvService(testcase)
     containers = test_env_service.start_testenv()
     ips = [
-        container.attrs['NetworkSettings']['Networks']['external-network']['IPAddress'] for container in containers
+        container.attrs['NetworkSettings']['Networks']['botched-network']['IPAddress'] for container in containers
     ]
     connection = UnixSocketConnection(path='/run/gvmd/gvmd.sock')
     try:
@@ -101,7 +101,7 @@ def _run_openvas_scan(testcase: Testcase, scanner: OpenvasService):
     #task_id = scanner.create_task()
     #scanner.start_scan(task_id)
     #report_id = scanner.retrieve_latest_report_id(task_id)
-    report = scanner.retrieve_report("86be7d52-1041-4453-9053-06038ef1deec")
+    report = scanner.retrieve_report("7a427daf-f599-4e0e-a593-50d3d2275ab1")
     ref = report.xpath(f'//ref[@id="{testcase.id}"]')[0]
     return ref.xpath('ancestor::result')[0]
 

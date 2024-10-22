@@ -8,17 +8,15 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - external-network
-      - vulnerable-network
-      - control-pane-network
-  ollama:
-    image: ollama/ollama
-    volumes:
-      - ollama_vol:/root/.ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - external-network
+      - botched-network
+  #ollama:
+  #  image: ollama/ollama
+  #  volumes:
+  #    - ollama_vol:/root/.ollama
+  #  ports:
+  #    - "11434:11434"
+  #  networks:
+  #    - external-network
 
 volumes:
   gvmd_socket_vol:
@@ -26,9 +24,5 @@ volumes:
   ollama_vol:
 
 networks:
-  external-network:
-    external: true
-  vulnerable-network:
-    external: true
-  control-pane-network:
+  botched-network:
     external: true
