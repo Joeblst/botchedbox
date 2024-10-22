@@ -8,3 +8,5 @@ docker
 django
 django-bootstrap-v5
 importlib
+pandas
+numpy

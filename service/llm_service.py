@@ -2,7 +2,6 @@ import os.path
 import time
 
 import yaml
-
 from openai import OpenAI
 
 

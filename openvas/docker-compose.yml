@@ -204,6 +204,7 @@ services:
         condition: service_completed_successfully
     networks:
       - vulnerable-network
+      - external-network
       - control-pane-network
 
   gvm-tools:

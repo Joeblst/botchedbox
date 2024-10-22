@@ -1,10 +1,10 @@
+import logging
 import os
 import subprocess
-import logging
+
 import docker
 
 from benchmark.models import Testcase
-
 
 logger = logging.getLogger(__name__)
 

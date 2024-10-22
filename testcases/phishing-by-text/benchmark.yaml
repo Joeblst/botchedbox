@@ -1,0 +1,29 @@
+problem:
+  id: Phishing-By-Text
+  type: "phishing"
+  description: "A collection of phishing and legitimate emails"
+  check_method: table #script, openvas, table
+  files:
+    - mail.csv
+
+llm:
+  default:
+    system: | 
+      You will be given an email message.
+      Your task is to analyze the email and determine if it is a phishing attempt or spam.
+      If the email contains characteristics commonly associated with phishing or spam (e.g., suspicious links, requests for sensitive information, or manipulative language), respond with 'true'.
+      If the email appears legitimate and does not exhibit these characteristics, respond with 'false'
+      Only respond with 'true' or 'false'
+      Do not provide further information.
+    prompt: |
+      You will be given an email message.
+      Your task is to analyze the email and determine if it is a phishing attempt or spam.
+      If the email contains characteristics commonly associated with phishing or spam (e.g., suspicious links, requests for sensitive information, or manipulative language), respond with 'true'.
+      If the email appears legitimate and does not exhibit these characteristics, respond with 'false'
+      Only respond with 'true' or 'false'
+      Do not provide further information.
+      Is this email a phishing/spam email or a legitimate email:
+      '''
+  #llama3.1:
+  mistral:
+  #gpt-3.5-turbo-0125:
