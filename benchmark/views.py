@@ -6,7 +6,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 from django.http import HttpResponse
 from django.template import loader
 
-from benchmark.models import Testcase, Result
+from benchmark.models import Testcase, Test
 from service import testcase_service, benchmark_service
 
 executor = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
@@ -51,6 +51,6 @@ def start_benchmark(request):
 
 def get_benchmarks(request):
     view = loader.get_template('benchmark/table.html')
-    results = Result.objects.all()
+    results = Test.objects.all()
     context = {'results': results}
     return HttpResponse(view.render(context, request))

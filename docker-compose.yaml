@@ -2,7 +2,6 @@ services:
   botchedbox:
     build: .
     volumes:
-      - gvmd_socket_vol:/run/gvmd
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -19,8 +18,6 @@ services:
   #    - external-network
 
 volumes:
-  gvmd_socket_vol:
-    external: true
   ollama_vol:
 
 networks:

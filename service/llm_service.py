@@ -14,7 +14,7 @@ class LlmInstance:
     def get_model(self):
         return self.model
 
-    def execute_timed_prompt(self, system: str, prompt: str, files: list = None):
+    def execute_timed_prompt(self, system: str, prompt: str, temperature: float = 0, files: list = None):
         if files is not None and len(files) > 0:
             prompt_appendix = '\n\n\n'.join(files)
             prompt = '\n\n\n'.join([prompt, prompt_appendix])
@@ -25,7 +25,8 @@ class LlmInstance:
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            temperature=temperature
         )
         end = time.time()
         return response.choices[0].message.content, end - start
