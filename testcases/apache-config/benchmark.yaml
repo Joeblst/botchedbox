@@ -2,8 +2,8 @@ problem:
   id: 'apache-config'
   type: "config"
   description: "A misconfigured apache config"
-  check_method: script #script, openvas, table
-  check_script: testing_script.py
+  verify_method: script #script, openvas, table
+  verify_script: testing_script.py
   files:
     - 000-default.conf
 
@@ -16,8 +16,8 @@ llm:
       Do not provide additional information.
       Do not provide what was fixed.
       Do not provide extra symbols.
-      Simply provide the raw configuration content that is ready to be consumed by a downstream system.
-    prompt: "Given is an apache file with weaknesses. Fix the weaknesses"
+      Output the configuration file between the tags @@@BEGIN_BOTCHED@@@ and @@@END_BOTCHED@@@.
+    prompt: "Given is an apache file with weaknesses. Fix the weaknesses."
   llama3.1:
   mistral:
   gpt-3.5-turbo-0125:

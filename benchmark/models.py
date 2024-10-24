@@ -74,6 +74,10 @@ class Testcase(models.Model):
     def get_config(self):
         return ast.literal_eval(self.config)
 
+    def get_verify_script_path(self):
+        config = self.get_config()
+        return os.path.join(self.path, config.get('problem').get('verify_script'))
+
     def get_file_paths(self):
         config = self.get_config()
         file_names = config.get('problem').get('files')

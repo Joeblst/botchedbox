@@ -7,20 +7,18 @@
             <th scope="col">Model</th>
             <th scope="col">Score</th>
             <th scope="col">State</th>
-            <th scope="col">Duration</th>
             <th scope="col">Timestamp</th>
         </tr>
         </thead>
         <tbody>
-        {% for result in results %}
+        {% for test in tests %}
             <tr>
-                <td>{{ result.benchmark_id }}</td>
-                <td>{{ result.testcase_id }}</td>
-                <td>{{ result.model }}</td>
-                <td>{{ result.score }}</td>
-                <td>{{ result.state }}</td>
-                <td>{{ result.duration }}</td>
-                <td>{{ result.timestamp }}</td>
+                <td>{{ test.benchmark_id }}</td>
+                <td>{{ test.testcase_id }}</td>
+                <td>{{ test.model }}</td>
+                <td>{{ test.score }}</td>
+                <td>{{ test.state }}</td>
+                <td>{{ test.timestamp }}</td>
             </tr>
         {% endfor %}
         </tbody>

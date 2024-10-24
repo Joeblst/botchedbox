@@ -16,8 +16,11 @@ class LlmInstance:
 
     def execute_timed_prompt(self, system: str, prompt: str, temperature: float = 0, files: list = None):
         if files is not None and len(files) > 0:
-            prompt_appendix = '\n\n\n'.join(files)
-            prompt = '\n\n\n'.join([prompt, prompt_appendix])
+            file_strings = []
+            for file in files:
+                file_strings.append(f'@@@START_BOTCHED@@@\n{file}\n@@@END_BOTCHED@@@')
+            prompt_appendix = '\n'.join(file_strings)
+            prompt = '\n\n'.join([prompt, prompt_appendix])
 
         start = time.time()
         response = self.client.chat.completions.create(

@@ -3,8 +3,6 @@ import os
 import yaml
 
 from benchmark.models import Testcase, Test
-from llm_service import LlmService, LlmInstance
-import test_service
 
 cwd = os.getcwd()
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +15,6 @@ def load_testcases() -> None:
         config_path = os.path.join(testcases_path, testcase_dir, 'benchmark.yaml')
         if not os.path.isfile(config_path):
             continue
-
         try:
             with open(config_path, 'r') as config_file:
                 config = yaml.safe_load(config_file)
@@ -35,7 +32,6 @@ def load_testcases() -> None:
 
 def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
     """Executes the given testcase based on its configuration."""
-    llm_service = LlmService()
     testcase_config = testcase.get_config()
     for llm in testcase_config.get('llm'):
         if llm == 'default':
@@ -47,7 +43,5 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
             state='PENDING'
         )
         test.save()
-        llm_instance = llm_service.get_instance(llm)
-        test_service.run_test(testcase, test, llm_instance)
 
 
