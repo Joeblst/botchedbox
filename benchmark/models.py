@@ -39,6 +39,7 @@ class Response(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='responses')
     model = models.CharField(max_length=100)
     content = models.TextField(blank=True, null=True)
+    check_result = models.TextField(blank=True, null=True)
     duration = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
 

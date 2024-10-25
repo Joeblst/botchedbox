@@ -2,24 +2,16 @@ services:
   botchedbox:
     build: .
     volumes:
-      - .:/app
+      - .:/opt/project/
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
-    networks:
-      - botched-network
-  #ollama:
-  #  image: ollama/ollama
-  #  volumes:
-  #    - ollama_vol:/root/.ollama
-  #  ports:
-  #    - "11434:11434"
-  #  networks:
-  #    - external-network
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_vol:/root/.ollama
+    ports:
+      - "11434:11434"
 
 volumes:
   ollama_vol:
-
-networks:
-  botched-network:
-    external: true

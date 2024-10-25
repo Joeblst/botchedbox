@@ -51,6 +51,6 @@ def start_benchmark(request):
 
 def get_benchmarks(request):
     view = loader.get_template('benchmark/table.html')
-    results = Test.objects.all()
-    context = {'results': results}
+    tests = Test.objects.all()
+    context = {'tests': tests}
     return HttpResponse(view.render(context, request))

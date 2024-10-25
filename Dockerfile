@@ -1,17 +1,14 @@
 FROM python:3.12
 
-WORKDIR /app
+WORKDIR /opt/project/
 
 RUN apt update && \
     apt install -y \
-    nmap \
-    ansible \
-    sshpass  \
     docker.io \
     docker-compose \
     && apt clean
 
-COPY . /app
+COPY . /opt/project/
 RUN pip install -r requirements.txt
 
 EXPOSE 8000

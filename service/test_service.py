@@ -4,7 +4,7 @@ import re
 from benchmark.models import Testcase, Test, Response
 from service.llm_service import LlmInstance, LlmService
 
-file_output_pattern = r"@@@START_BOTCHED@@@\s*(.*?)\s*@@@END_BOTCHED@@@"
+file_output_pattern = r"@@@START_FILE@@@(.*?)@@@END_FILE@@@"
 
 def run_tests(benchmark_id: str, testcase: Testcase) -> None:
     """Executes all tests for the given testcase."""
@@ -38,12 +38,12 @@ def calculate_score_script(testcase: Testcase, llm_output: str) -> int:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     verify_function = getattr(module, 'verify')
-    file_matches = re.findall(file_output_pattern, llm_output)
+    file_matches = re.findall(file_output_pattern, llm_output, re.DOTALL)
 
     if file_matches:
         for i, match in enumerate(file_matches, 1):
             # TODO: Multiple files
-            return verify_function(match)
+            return verify_function(testcase, match)
     else:
         print("No valid content found between the tokens.")
         return 0

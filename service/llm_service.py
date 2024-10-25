@@ -18,7 +18,7 @@ class LlmInstance:
         if files is not None and len(files) > 0:
             file_strings = []
             for file in files:
-                file_strings.append(f'@@@START_BOTCHED@@@\n{file}\n@@@END_BOTCHED@@@')
+                file_strings.append(f'@@@START_FILE@@@\n{file}\n@@@END_FILE@@@')
             prompt_appendix = '\n'.join(file_strings)
             prompt = '\n\n'.join([prompt, prompt_appendix])
 
