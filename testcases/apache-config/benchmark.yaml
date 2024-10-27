@@ -4,8 +4,7 @@ problem:
   description: "A misconfigured apache config"
   verify_method: script #script, openvas, table
   verify_script: testing_script.py
-  files:
-    - 000-default.conf
+  files: httpd.conf
 
 llm:
   default:

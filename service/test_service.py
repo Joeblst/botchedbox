@@ -19,15 +19,15 @@ def run_test(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     response = Response()
     response.test = test
     response.model = test.model
-    files = testcase.get_files()
+    file = testcase.get_file()
     llm_prompt_config = testcase.get_config().get('llm')
     system = llm_prompt_config.get(test.model).get('system') if llm_prompt_config.get(test.model) else None
     prompt = llm_prompt_config.get(test.model).get('prompt') if llm_prompt_config.get(test.model) else None
     system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
     prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
-    response.content, response.duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=0, files=files)
+    response.content, response.duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=0, file=file)
     response.save()
-    test.score = calculate_score_script(testcase, response.content)
+    test.score = calculate_score_script(testcase, response)
     test.state = 'FINISHED'
     test.save()
 

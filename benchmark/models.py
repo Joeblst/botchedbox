@@ -79,24 +79,19 @@ class Testcase(models.Model):
         config = self.get_config()
         return os.path.join(self.path, config.get('problem').get('verify_script'))
 
-    def get_file_paths(self):
+    def get_file_path(self):
         config = self.get_config()
-        file_names = config.get('problem').get('files')
-        file_paths = []
-        if file_names:
-            for file_name in file_names:
-                file_paths.append(os.path.join(self.path, file_name))
-        return file_paths
+        file_name = config.get('problem').get('file')
+        if file_name:
+            return os.path.join(self.path, file_name)
+        return None
 
-    def get_files(self):
-        file_paths = self.get_file_paths()
-        files = []
-        if file_paths:
-            for file_path in file_paths:
-                with open(file_path, 'r') as f:
-                    files.append(f.read())
-            return files
-        return files
+    def get_file(self):
+        file_path = self.get_file_path()
+        if file_path:
+            with open(file_path, 'r') as f:
+                return f.read()
+        return None
 
     def __str__(self):
         return f"Testcase {self.id}"

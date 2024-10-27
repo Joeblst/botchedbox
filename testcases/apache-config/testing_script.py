@@ -1,26 +1,27 @@
+import math
 import os
 import re
 import subprocess
 import tempfile
 import logging
 
-from benchmark.models import Testcase
-
+from benchmark.models import Testcase, Response
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+test_counts = 0
 
-
-def validate_apache_config(testcase: Testcase, config: str) -> bool:
+def validate_apache_config(testcase: Testcase, response: Response) -> int:
     """Validate Apache site config using a Docker container."""
+    global test_counts
+    test_counts += 1
     container_name = "apache_temp"
     image_name = "apache-validate:2.4"
 
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.conf') as temp_file:
-            temp_file.write(config.encode())
+            temp_file.write(response.content.encode())
             temp_file_path = temp_file.name
 
-        # Build the Docker image
         build_result = subprocess.run(
             ["docker", "build", "-t", image_name, testcase.path],
             check=True,
@@ -29,7 +30,6 @@ def validate_apache_config(testcase: Testcase, config: str) -> bool:
         )
         logging.debug(f"Docker build output: {build_result.stdout}")
 
-        # Run the Docker container
         run_result = subprocess.run(
             ["docker", "run", "--name", container_name, "-d", image_name],
             check=True,
@@ -38,29 +38,14 @@ def validate_apache_config(testcase: Testcase, config: str) -> bool:
         )
         logging.debug(f"Docker run output: {run_result.stdout}")
 
-        # Copy the site config file into the container's conf/extra directory
         cp_result = subprocess.run(
-            ["docker", "cp", temp_file_path, f"{container_name}:/usr/local/apache2/conf/extra/site.conf"],
+            ["docker", "cp", temp_file_path, f"{container_name}:/usr/local/apache2/conf/httpd.conf"],
             check=True,
             capture_output=True,
             text=True
         )
         logging.debug(f"Docker cp output: {cp_result.stdout}")
 
-        # Modify the httpd.conf inside the container to include the site config
-        include_line = 'Include conf/extra/site.conf'
-        exec_result = subprocess.run(
-            [
-                "docker", "exec", container_name, "sh", "-c",
-                f"echo '{include_line}' >> /usr/local/apache2/conf/httpd.conf"
-            ],
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        logging.debug(f"Docker exec output: {exec_result.stdout}")
-
-        # Check the config syntax inside the container
         test_result = subprocess.run(
             ["docker", "exec", container_name, "apachectl", "-t"],
             capture_output=True, text=True
@@ -70,127 +55,185 @@ def validate_apache_config(testcase: Testcase, config: str) -> bool:
 
         if test_result.returncode != 0:
             logging.error(f"Invalid Apache configuration: {test_result.stderr.strip()}")
-            return False
+            response.check_result += f"""
+            Apache config was invalid:
+            ```
+            {test_result.stderr.strip()}
+            ```\n
+            """
+            return 0
         else:
             logging.info("Apache configuration is valid.")
-            return True
+            response.check_result += f"""
+            Config is valid.
+            """
+            return 1
     except subprocess.CalledProcessError as e:
         logging.error(f"Error during Apache config validation: {e.stderr}")
-        return False
+        response.check_result += f"""
+        ```
+        Error during Apache config validation: 
+        {e.stderr.strip()}
+        ```\n
+        """
+        return 0
     finally:
-        # Clean up: Stop and remove the container
         subprocess.run(["docker", "rm", "-f", container_name], check=False)
-        # Remove the temporary config file
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        # Optionally, remove the image to avoid clutter
         subprocess.run(["docker", "rmi", image_name], check=False)
 
 
-def verify(testcase: Testcase, llm_output: str) -> int:
+def verify(testcase: Testcase, response: Response) -> int:
 
-    score = 100
-    # Points for a valid apache config
-    if not validate_apache_config(testcase, llm_output):
-        pass
+    score = 0
+    response.check_result += """
+    # Apache Config
+    ## Config Validation\n
+    """
+    score += validate_apache_config(testcase, response)
+    response.check_result += "## Security Issues\n"
+    score += check_root_directory(response)
+    score += check_directories_locations(response)
+    score += check_pid_not_in_documentroot(response)
+    score += check_unnecessary_auth_modules(response)
+    score += check_module_disabled(response)
+    score += check_user_not_root(response)
+    score += check_directory_options_no_includes(response)
+    score += check_server_status_and_info_commented_out(response)
+    score += check_trace_disabled(response)
+    score += check_security_headers(response)
+    score += check_ssl_configuration(response)
+    if test_counts == 0:
+        return 0
+    score = (score / test_counts) * 100
+    return math.floor(score)
 
 
-def check_root_directory(llm_output: str) -> int:
+
+
+def check_root_directory(response: Response) -> int:
     """
     Checks if:
     1. A "Require all denied" rule is set in the <Directory /> block.
     2. An "AllowOverride None" directive is present in the same block.
     3. An "Options None" directive is present in the same block.
     """
-    # Pattern to match the <Directory /> block
-    match = re.search(r"<Directory\s*/\s*>(.*?)</Directory>", llm_output, re.DOTALL | re.IGNORECASE)
+    global test_counts
+    test_counts += 4
+    score = 0
+    response.check_result += "### Default Deny Directive\n"
+
+    match = re.search(r"<Directory\s*/\s*>(.*?)</Directory>", response.content, re.DOTALL | re.IGNORECASE)
     if match:
         directory_content = match.group(1)
-        # Check for "Require all denied"
-        if not re.search(r"^\s*Require\s+all\s+denied\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+        if re.search(r"^\s*Require\s+all\s+denied\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+            score += 1
+        else:
             logging.warning("Missing 'Require all denied' in <Directory /> block.")
-            return 1
-        # Check for "AllowOverride None"
-        if not re.search(r"^\s*AllowOverride\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+            response.check_result += "Missing Require all denied in <Directory /> block.\n"
+        if re.search(r"^\s*AllowOverride\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+            score += 1
+        else:
             logging.warning("Missing 'AllowOverride None' in <Directory /> block.")
-            return 1
-        # Check for "Options None"
-        if not re.search(r"^\s*Options\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+            response.check_result += "Missing AllowOverride in <Directory /> block.\n"
+        if re.search(r"^\s*Options\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
+            score += 1
+        else:
             logging.warning("Missing 'Options None' in <Directory /> block.")
-            return 1
-        # All conditions met
-        return 0
+            response.check_result += "Missing Options in <Directory /> block.\n"
+        score += 1
     else:
         logging.warning("No <Directory /> block found.")
-        return 1
+        response.check_result += "No <Directory /> block found.\n"
+    return score
 
 
-def check_directories_locations(llm_output: str) -> int:
+def check_directories_locations(response: Response) -> int:
     """
     Checks if:
     1. Every <Directory> and <Location> directive contains a "Require" directive.
     2. Every "AllowOverride" directive is set to "None" in those blocks.
     """
-    # Pattern to match <Directory> and <Location> blocks
-    pattern = r"<(Directory|Location)(?:\s+[^>]*)?>(.*?)</\1>"
-    matches = re.findall(pattern, llm_output, re.DOTALL | re.IGNORECASE)
+    global test_counts
+    response.check_result += "### Directive and Locations\n"
+    matches = re.findall(
+        r"<(Directory|Location)(?:\s+[^>]*)?>(.*?)</\1>",
+        response.content,
+        re.DOTALL | re.IGNORECASE
+    )
+    test_counts += 3
+    score = 0
 
-    all_good = True
-
+    all_require = True
+    all_allowoverride = True
+    all_options = True
     for tag, content in matches:
-        # Check for "Require"
         if not re.search(r"^\s*Require\b", content, re.MULTILINE | re.IGNORECASE):
             logging.warning(f"Missing 'Require' directive in <{tag}> block.")
-            all_good = False
+            response.check_result += "- Missing Require directive in <{tag}> block.\n"
+            all_require = False
 
-        # Check "AllowOverride None"
         allowoverride_matches = re.findall(r"^\s*AllowOverride\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if not allowoverride_matches or any(val.lower() != "none" for val in allowoverride_matches):
             logging.warning(f"'AllowOverride' is not set to 'None' in <{tag}> block.")
-            all_good = False
+            response.check_result += "- AllowOverride is not set to 'None' in <{tag}> block.\n"
+            all_allowoverride = False
 
-        # Check "AllowOverride None"
         options_matches = re.findall(r"^\s*Options\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if options_matches and any(val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
             logging.warning(f"'Options' is set to 'Includes' in <{tag}> block.")
-            all_good = False
+            response.check_result += "- Options is not set to 'Includes' in <{tag}> block.\n"
+            all_options = False
 
-    return 0 if all_good else 1
+    score += 1 if all_require else 0
+    score += 1 if all_allowoverride else 0
+    score += 1 if all_options else 0
+    return score
 
 
-def check_pid_not_in_documentroot(llm_output: str) -> int:
+def check_pid_not_in_documentroot(response: Response) -> int:
     """
     Checks if the PidFile is located outside the DocumentRoot.
     """
-    # Match DocumentRoot and PidFile paths
-    document_root_match = re.search(r"DocumentRoot\s+\"([^\"]+)\"", llm_output, re.IGNORECASE)
-    pidfile_match = re.search(r"PidFile\s+\"([^\"]+)\"", llm_output, re.IGNORECASE)
+    global test_counts
+    test_counts += 1
+    score = 0
+    response.check_result += "## PidFile is located outside the DocumentRoot.\n"
+    document_root_match = re.search(r"DocumentRoot\s+\"([^\"]+)\"", response.content, re.IGNORECASE)
+    pidfile_match = re.search(r"PidFile\s+\"([^\"]+)\"", response.content, re.IGNORECASE)
 
     # Extract paths if present
     document_root = document_root_match.group(1) if document_root_match else None
     pidfile_path = pidfile_match.group(1) if pidfile_match else None
 
-    # Check if PidFile is within DocumentRoot
     if document_root and pidfile_path:
         if os.path.commonpath([pidfile_path]) == os.path.commonpath([document_root, pidfile_path]):
+            response.check_result += "PidFile is located inside the DocumentRoot.\n"
             logging.warning("The PidFile is located within the DocumentRoot, which is not recommended.")
-            return 1  # Non-compliant: PidFile is in DocumentRoot
         else:
-            return 0  # Compliant: PidFile is outside DocumentRoot
+            score += 1
     else:
         logging.info("DocumentRoot or PidFile not specified in the configuration.")
-        return 0  # Considered compliant if either directive is missing
+        score += 1
+    return score
 
 
-def check_unnecessary_auth_modules(llm_output: str) -> int:
+def check_unnecessary_auth_modules(response: Response) -> int:
     """
     Checks if only necessary LDAP authentication modules are enabled.
     """
-    # Define required modules for LDAP authentication
+    global test_counts
     required_modules = {"authnz_ldap_module", "ldap_module"}
+    test_counts += len(required_modules)
+    score = 0
+    response.check_result += "### Required Modules\n"
 
-    # Pattern to find all loaded modules
-    loaded_modules = re.findall(r"^\s*LoadModule\s+(\w+)\s+modules/\w+\.so", llm_output, re.MULTILINE | re.IGNORECASE)
+    loaded_modules = re.findall(
+        r"^\s*LoadModule\s+(\w+)\s+modules/\w+\.so",
+        response.content,
+        re.MULTILINE | re.IGNORECASE
+    )
 
     # Identify unnecessary auth modules
     unnecessary_auth_modules = [
@@ -201,142 +244,275 @@ def check_unnecessary_auth_modules(llm_output: str) -> int:
     # Check if unnecessary authentication modules are present
     if unnecessary_auth_modules:
         logging.warning("The following unnecessary auth modules should be disabled:")
+        response.check_result += "- The following unnecessary auth modules are not enabled:\n"
         for module in unnecessary_auth_modules:
             logging.warning(f"Disable {module}")
-        return 1  # Non-compliant: unnecessary auth modules are enabled
+            response.check_result += "  - Disable {module}\n"
     else:
-        return 0  # Compliant: only necessary LDAP modules are enabled
+        score += 1
+    return score
 
 
-def check_module_disabled(llm_output: str) -> int:
+def check_module_disabled(response: Response) -> int:
     """
     Checks if specified modules are disabled (either commented out or missing).
     """
-    # List of modules that should be disabled
+    global test_counts
     disabled_modules = ["autoindex_module", "status_module"]
+    test_counts += len(disabled_modules)
+    score = len(disabled_modules)
+    response.check_result += "### Disabled Modules\n"
 
-    # Check each module to ensure it is disabled
     for module in disabled_modules:
-        # Pattern to find if the module is loaded (enabled)
-        match = re.search(rf"^\s*LoadModule\s+{module}\s+modules/\w+\.so", llm_output, re.MULTILINE | re.IGNORECASE)
+        match = re.search(
+            rf"^\s*LoadModule\s+{module}\s+modules/\w+\.so",
+            response.content,
+            re.MULTILINE | re.IGNORECASE
+        )
 
-        # If the module is found and not commented out, return non-compliance
         if match:
             logging.warning(f"{module} is enabled and should be disabled.")
-            return 1  # Non-compliant: the module is enabled
+            response.check_result += "- Disable {module}\n"
+            score -= 1
 
-    # All specified modules are disabled
-    return 0  # Compliant: all specified modules are disabled
+    return score
 
 
-def check_user_not_root(llm_output: str) -> int:
+def check_user_not_root(response: Response) -> int:
     """
     Checks if the User and Group directives are not set to 'root'.
     """
-    # Match the User directive
-    user_match = re.search(r"^\s*User\s+(\S+)", llm_output, re.MULTILINE | re.IGNORECASE)
+    global test_counts
+    test_counts += 2
+    response.check_result += "### User Not Root Directives\n"
+    score = 0
+
+    user_match = re.search(r"^\s*User\s+(\S+)", response.content, re.MULTILINE | re.IGNORECASE)
     if user_match and user_match.group(1).lower() == "root":
         logging.warning("User is set to 'root'.")
-        return 1
-
-    # Match the Group directive
-    group_match = re.search(r"^\s*Group\s+(\S+)", llm_output, re.MULTILINE | re.IGNORECASE)
+        response.check_result += "- User is set to 'root'.\n"
+    else:
+        score += 1
+    group_match = re.search(r"^\s*Group\s+(\S+)", response.content, re.MULTILINE | re.IGNORECASE)
     if group_match and group_match.group(1).lower() == "root":
         logging.warning("Group is set to 'root'.")
-        return 1
+        response.check_result += "- Group is set to 'root'.\n"
+    else:
+        score += 1
+    return score
 
-    return 0  # Compliant if neither is set to "root"
 
-
-def check_directory_options_no_includes(llm_output: str) -> int:
+def check_directory_options_no_includes(response) -> int:
     """
-    Checks if every <Directory> block does not include "Includes" or "-Includes" in the "Options" directive.
+    Checks if every <Directory> block does not include "Includes" in the "Options" directive,
+    but allows "-Includes".
 
     Parameters:
-    - llm_output (str): The configuration text to be checked.
+    - response (Response): The response object containing the configuration text.
 
     Returns:
-    - int: 0 if no <Directory> block contains "Includes" or "-Includes" in "Options", 1 if any do.
+    - int: 0 if no <Directory> block contains "Includes" (while allowing "-Includes"), 1 if any do.
     """
-    # Pattern to match all <Directory> blocks
-    directory_pattern = r"<Directory\s+[^>]+>(.*?)</Directory>"
-    directory_blocks = re.findall(directory_pattern, llm_output, re.DOTALL | re.IGNORECASE)
+    global test_counts
+    test_counts += 1
+    response.check_result += "### Directory Options\n"
 
-    # Check each <Directory> block for "Options" with "Includes" or "-Includes"
+    # Find all <Directory> blocks
+    directory_blocks = re.findall(
+        r"<Directory\s+[^>]+>(.*?)</Directory>", response.content,
+        re.DOTALL | re.IGNORECASE
+    )
+
     for directory_content in directory_blocks:
-        # Search for Options line and check if it contains "Includes" or "-Includes"
-        options_match = re.search(r"^\s*Options\s+.*\b(Includes|-Includes)\b", directory_content, re.MULTILINE | re.IGNORECASE)
+        options_match = re.search(
+            r"^\s*Options\s+.*\b(?<!-)(Includes)\b",
+            directory_content,
+            re.MULTILINE | re.IGNORECASE
+        )
         if options_match:
-            print('Error: "Options" directive contains "Includes" or "-Includes" in a <Directory> block.')
-            return 1  # Non-compliant: Includes or -Includes found
+            return 0
 
-    # Compliant: No "Includes" or "-Includes" found in any <Directory> block
-    return 0
+    return 1
 
 
-def check_server_status_and_info_commented_out(llm_output: str) -> int:
+def check_server_status_and_info_commented_out(response) -> int:
     """
     Checks if the <Location /server-status> and <Location /server-info> blocks are commented out or absent.
 
     Parameters:
-    - llm_output (str): The configuration text to be checked.
+    - response (Response): The response object containing the configuration text.
 
     Returns:
-    - int: 0 if both <Location /server-status> and <Location /server-info> blocks are commented out or not present,
-           1 if either is active.
+    - int: A score where 1 point is given for each compliant directive, up to a maximum of 2.
     """
-    # Patterns to match the <Location /server-status> and <Location /server-info> blocks
-    server_status_pattern = r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>"
-    server_info_pattern = r"(?<!#)\s*<Location\s+/server-info>\s*.*?</Location>"
+    global test_counts
+    test_counts += 2
+    response.check_result += "### Server Status and Info Directives\n"
+    score = 0
 
-    # Check if the <Location /server-status> block is present and not commented out
-    if re.search(server_status_pattern, llm_output, re.DOTALL | re.IGNORECASE):
-        print("Error: The <Location /server-status> block is active and should be commented out.")
-        return 1  # Non-compliant: The /server-status block is active
+    if re.search(r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>", response.content, re.DOTALL | re.IGNORECASE):
+        logging.warning("The <Location /server-status> block is active and should be commented out.")
+        response.check_result += "- The <Location /server-status> block is active and should be commented out.\n"
+    else:
+        score += 1
 
     # Check if the <Location /server-info> block is present and not commented out
-    if re.search(server_info_pattern, llm_output, re.DOTALL | re.IGNORECASE):
-        print("Error: The <Location /server-info> block is active and should be commented out.")
-        return 1  # Non-compliant: The /server-info block is active
+    if re.search(r"(?<!#)\s*<Location\s+/server-info>\s*.*?</Location>", response.content, re.DOTALL | re.IGNORECASE):
+        logging.warning("The <Location /server-info> block is active and should be commented out.")
+        response.check_result += "- The <Location /server-info> block is active and should be commented out.\n"
+    else:
+        score += 1
 
-    return 0  # Compliant: Both blocks are commented out or not present
+    return score
 
 
-def check_trace_disabled(llm_output: str) -> int:
+def check_trace_disabled(response) -> int:
     """
     Checks if TRACE is disabled by verifying:
     1. 'TraceEnable' is set to 'off', or
     2. Every <Directory> block contains a <LimitExcept> directive that disables 'TRACE'.
 
     Parameters:
-    - llm_output (str): The configuration text to be checked.
+    - response (Response): The response object containing the configuration text.
 
     Returns:
-    - int: 0 if TRACE is disabled properly, 1 if TRACE is enabled or not properly disabled.
+    - int: A score where 1 point is given for each compliant check, up to a maximum of 2.
     """
-    # Check if 'TraceEnable off' is present
-    trace_enable_pattern = r"^\s*TraceEnable\s+off\s*$"
-    if re.search(trace_enable_pattern, llm_output, re.MULTILINE | re.IGNORECASE):
-        return 0  # Compliant: TraceEnable is set to off globally
+    global test_counts
+    test_counts += 2
+    response.check_result += "### Trace Disable Directives\n"
+    score = 0
 
-    # Pattern to match all <Directory> blocks
-    directory_pattern = r"<Directory\s+[^>]+>(.*?)</Directory>"
-    directory_blocks = re.findall(directory_pattern, llm_output, re.DOTALL | re.IGNORECASE)
+    if re.search(r"^\s*TraceEnable\s+off\s*$", response.content, re.MULTILINE | re.IGNORECASE):
+        score += 1
+    else:
+        response.check_result += "- TraceEnable is not set to 'off'.\n"
+        logging.warning("TraceEnable is not set to 'off'.")
 
-    # Check if each <Directory> block has <LimitExcept> disabling TRACE
+    directory_blocks = re.findall(
+        r"<Directory\s+[^>]+>(.*?)</Directory>",
+        response.content,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    all_directories_compliant = True
     for directory_content in directory_blocks:
-        # Look for <LimitExcept> blocks
-        limit_except_match = re.search(r"<LimitExcept\s+([^>]+)>(.*?)</LimitExcept>", directory_content,
-                                       re.DOTALL | re.IGNORECASE)
+        limit_except_match = re.search(
+            r"<LimitExcept\s+([^>]+)>(.*?)</LimitExcept>",
+            directory_content,
+            re.DOTALL | re.IGNORECASE
+        )
         if limit_except_match:
-            # Get the list of methods allowed by <LimitExcept>
             allowed_methods = limit_except_match.group(1).split()
             if "TRACE" in allowed_methods:
-                print("Error: TRACE is allowed in a <LimitExcept> directive, which is not recommended.")
-                return 1  # Non-compliant: TRACE is explicitly allowed
+                all_directories_compliant = False
+                response.check_result += "- TRACE is allowed in a <LimitExcept> directive, which is not recommended.\n"
+                logging.warning("TRACE is allowed in a <LimitExcept> directive.")
+                break
         else:
-            print("Error: No <LimitExcept> directive found in a <Directory> block.")
-            return 1  # Non-compliant: <LimitExcept> is missing
+            all_directories_compliant = False
+            response.check_result += "- No <LimitExcept> directive found in a <Directory> block.\n"
+            logging.warning("No <LimitExcept> directive found in a <Directory> block.")
+            break
 
-    # Compliant if no issues were found
-    return 0
+    if all_directories_compliant:
+        score += 1
+
+    return score
+
+
+def check_security_headers(response) -> int:
+    """
+    Checks if the <IfModule headers_module> block contains the correct security headers:
+    - RequestHeader unset Proxy early
+    - Header always set X-Frame-Options "SAMEORIGIN"
+    - Header always set X-XSS-Protection "1; mode=block"
+    - Header always set X-Content-Type-Options "nosniff"
+    - Header always set Content-Security-Policy "default-src 'self';" or "frame-ancestors 'self'"
+
+    Parameters:
+    - response (Response): The response object containing the configuration text.
+
+    Returns:
+    - int: A score where 1 point is given for a compliant configuration, up to a maximum of 1.
+    """
+    global test_counts
+    test_counts += 1
+    response.check_result += "### Security Headers\n"
+    score = 0
+
+    security_headers_pattern = (
+        r"<IfModule\s+headers_module>\s*"
+        r"(?=.*?RequestHeader\s+unset\s+Proxy\s+early)"
+        r"(?=.*?Header\s+always\s+set\s+X-Frame-Options\s+\"?SAMEORIGIN\"?)"
+        r"(?=.*?Header\s+always\s+set\s+X-XSS-Protection\s+\"?1;\s+mode=block\"?)"
+        r"(?=.*?Header\s+always\s+set\s+X-Content-Type-Options\s+\"?nosniff\"?)"
+        r"(?=.*?Header\s+always\s+set\s+Content-Security-Policy\s+\"?(default-src\s+'self';|frame-ancestors\s+'self')\"?)"
+        r".*?</IfModule>"
+    )
+
+    if re.search(security_headers_pattern, response.content, re.DOTALL | re.IGNORECASE):
+        score += 1
+    else:
+        response.check_result += "- Missing or incorrect security headers in <IfModule headers_module>.\n"
+        logging.warning("Missing or incorrect security headers.")
+
+    return score
+
+
+def check_ssl_configuration(response) -> int:
+    """
+    Checks if the SSL configuration meets the following criteria:
+    1. SSLProtocol allows only TLSv1.2 and TLSv1.3.
+    2. SSLHonorCipherOrder is set to On.
+    3. SSLCipherSuite is properly configured to exclude insecure ciphers.
+
+    Parameters:
+    - response (Response): The response object containing the configuration text.
+
+    Returns:
+    - int: A score where 1 point is given for each compliant check, up to a maximum of 3.
+    """
+    global test_counts
+    test_counts += 3
+    response.check_result += "### SSL Configuration\n"
+    score = 0
+
+    # Check if SSLProtocol allows only TLSv1.2 and TLSv1.3
+    ssl_protocol_pattern = r"^\s*SSLProtocol\s+(.*)$"
+    protocol_match = re.search(ssl_protocol_pattern, response.content, re.MULTILINE | re.IGNORECASE)
+    if protocol_match:
+        allowed_protocols = protocol_match.group(1).strip()
+        if allowed_protocols in {"TLSv1.2 TLSv1.3", "TLSv1.3 TLSv1.2"}:
+            score += 1
+        else:
+            response.check_result += "- SSLProtocol should allow only TLSv1.2 and TLSv1.3.\n"
+            logging.warning("SSLProtocol should allow only TLSv1.2 and TLSv1.3.")
+    else:
+        response.check_result += "- SSLProtocol is not set.\n"
+        logging.warning("SSLProtocol is not set.")
+
+    # Check if SSLHonorCipherOrder is set to On
+    ssl_honor_cipher_order_pattern = r"^\s*SSLHonorCipherOrder\s+On\s*$"
+    if re.search(ssl_honor_cipher_order_pattern, response.content, re.MULTILINE | re.IGNORECASE):
+        score += 1
+    else:
+        response.check_result += "- SSLHonorCipherOrder must be set to On.\n"
+        logging.warning("SSLHonorCipherOrder must be set to On.")
+
+    # Check if SSLCipherSuite excludes insecure ciphers
+    ssl_cipher_suite_pattern = r"^\s*SSLCipherSuite\s+(.*)$"
+    cipher_suite_match = re.search(ssl_cipher_suite_pattern, response.content, re.MULTILINE | re.IGNORECASE)
+    if cipher_suite_match:
+        cipher_suite = cipher_suite_match.group(1).strip()
+        required_exclusions = {"!EXP", "!NULL", "!LOW", "!SSLv2", "!RC4", "!aNULL"}
+        if all(exclusion in cipher_suite for exclusion in required_exclusions):
+            score += 1
+        else:
+            response.check_result += "- SSLCipherSuite does not properly exclude insecure ciphers.\n"
+            logging.warning("SSLCipherSuite does not properly exclude insecure ciphers.")
+    else:
+        response.check_result += "- SSLCipherSuite is not set.\n"
+        logging.warning("SSLCipherSuite is not set.")
+
+    return score

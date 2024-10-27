@@ -14,13 +14,10 @@ class LlmInstance:
     def get_model(self):
         return self.model
 
-    def execute_timed_prompt(self, system: str, prompt: str, temperature: float = 0, files: list = None):
-        if files is not None and len(files) > 0:
-            file_strings = []
-            for file in files:
-                file_strings.append(f'@@@START_FILE@@@\n{file}\n@@@END_FILE@@@')
-            prompt_appendix = '\n'.join(file_strings)
-            prompt = '\n\n'.join([prompt, prompt_appendix])
+    def execute_timed_prompt(self, system: str, prompt: str, temperature: float = 0, file: str = None):
+        if file is not None and len(file) > 0:
+            file_string = f'@@@START_FILE@@@\n{file}\n@@@END_FILE@@@'
+            prompt = '\n\n'.join([prompt, file_string])
 
         start = time.time()
         response = self.client.chat.completions.create(
