@@ -7,3 +7,5 @@ django-bootstrap-v5
 importlib
 pandas
 numpy
+markdown
+django-markdownify

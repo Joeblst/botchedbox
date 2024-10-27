@@ -8,4 +8,5 @@ urlpatterns = [
     path('load_testcases', views.load_testcases, name="load_testcases"),
     path('start_benchmark', views.start_benchmark, name="start_benchmark"),
     path('get_benchmarks', views.get_benchmarks, name="get_benchmark"),
+    path('benchmark/<str:benchmark_id>/', views.benchmark, name='benchmark'),
 ]

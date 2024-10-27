@@ -1,56 +1,71 @@
-import ast
-import multiprocessing
-import uuid
-from concurrent.futures.process import ProcessPoolExecutor
-
+from django.shortcuts import render
 from django.http import HttpResponse
-from django.template import loader
-
-from benchmark.models import Testcase, Test
+from .models import Test, Testcase
 from service import testcase_service, benchmark_service
+import ast
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 
-executor = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
+executor = ThreadPoolExecutor()
+
 
 def index(request):
-    view = loader.get_template('benchmark/default.html')
-    return HttpResponse(view.render({}, request))
+    return render(request, 'benchmark/default.html')
+
+
+def get_testcase_infos():
+    """Helper function to get formatted testcase information."""
+    testcase_objs = Testcase.objects.all()
+    testcase_infos = []
+
+    for testcase in testcase_objs:
+        try:
+            config = ast.literal_eval(testcase.config)
+            testcase_infos.append({
+                'id': testcase.id,
+                'type': config.get('problem', {}).get('type', 'Unknown'),
+                'description': config.get('problem', {}).get('description', 'No description available'),
+            })
+        except (ValueError, SyntaxError) as e:
+            # Handle possible errors from ast.literal_eval
+            print(f"Error parsing config for Testcase {testcase.id}: {e}")
+            continue
+
+    return testcase_infos
+
 
 def load_testcases(request):
-    view = loader.get_template('testcase/table.html')
     testcase_service.load_testcases()
-    testcase_objs = Testcase.objects.all()
-    testcase_infos = []
-    for testcases_obj in testcase_objs:
-        config = ast.literal_eval(testcases_obj.config)
-        testcase_infos.append({
-            'id': testcases_obj.id,
-            'type': config['problem']['type'],
-            'description': config['problem']['description'],
-        })
-    context = {'testcase_infos': testcase_infos}
-    return HttpResponse(view.render(context, request))
+    context = {'testcase_infos': get_testcase_infos()}
+    return render(request, 'testcase/table.html', context)
+
 
 def testcases(request):
-    view = loader.get_template('testcase/default.html')
-    testcase_objs = Testcase.objects.all()
-    testcase_infos = []
-    for testcases_obj in testcase_objs:
-        config = ast.literal_eval(testcases_obj.config)
-        testcase_infos.append({
-            'id': testcases_obj.id,
-            'type': config['problem']['type'],
-            'description': config['problem']['description'],
-        })
-    context = {'testcase_infos': testcase_infos}
-    return HttpResponse(view.render(context, request))
+    context = {'testcase_infos': get_testcase_infos()}
+    return render(request, 'testcase/default.html', context)
+
 
 def start_benchmark(request):
-    benchmark_id = str(uuid.uuid4())
+    benchmark_id = uuid.uuid4().hex
     executor.submit(benchmark_service.run_benchmark, benchmark_id)
     return HttpResponse('Benchmark started')
 
+
 def get_benchmarks(request):
-    view = loader.get_template('benchmark/table.html')
     tests = Test.objects.all()
     context = {'tests': tests}
-    return HttpResponse(view.render(context, request))
+    return render(request, 'benchmark/table.html', context)
+
+
+def benchmark(request, benchmark_id):
+    tests = Test.objects.filter(benchmark_id=benchmark_id)
+    test_responses = {}
+
+    for test in tests:
+        responses = test.responses.all()
+        if test.model in test_responses:
+            test_responses[test.model].extend(responses)
+        else:
+            test_responses[test.model] = list(responses)
+
+    return render(request, 'benchmark/responses.html', {'test_responses': test_responses})

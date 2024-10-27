@@ -61,7 +61,7 @@ def validate_apache_config(testcase: Testcase, response: Response) -> int:
             response.check_result += f"""
             Apache config was invalid:
             ```
-            {test_result.stderr.strip()}
+            {test_result.stderr.strip()}\n
             ```\n
             """
             return 0
@@ -76,7 +76,7 @@ def validate_apache_config(testcase: Testcase, response: Response) -> int:
         response.check_result += f"""
         ```
         Error during Apache config validation: 
-        {e.stderr.strip()}
+        {e.stderr.strip()}\n
         ```\n
         """
         return 0
@@ -150,8 +150,8 @@ def check_root_directory(response: Response) -> int:
             response.check_result += "Missing Options in <Directory /> block.\n"
         score += 1
     else:
-        logging.warning("No <Directory /> block found.")
-        response.check_result += "No <Directory /> block found.\n"
+        logging.warning("No '<Directory />' block found.")
+        response.check_result += "No '<Directory />' block found.\n"
     return score
 
 
@@ -177,19 +177,19 @@ def check_directories_locations(response: Response) -> int:
     for tag, content in matches:
         if not re.search(r"^\s*Require\b", content, re.MULTILINE | re.IGNORECASE):
             logging.warning(f"Missing 'Require' directive in <{tag}> block.")
-            response.check_result += f"- Missing Require directive in <{tag}> block.\n"
+            response.check_result += f"- Missing Require directive in '\<{tag}\>' block.\n"
             all_require = False
 
         allowoverride_matches = re.findall(r"^\s*AllowOverride\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if not allowoverride_matches or any(val.lower() != "none" for val in allowoverride_matches):
             logging.warning(f"'AllowOverride' is not set to 'None' in <{tag}> block.")
-            response.check_result += f"- AllowOverride is not set to 'None' in <{tag}> block.\n"
+            response.check_result += f"- AllowOverride is not set to 'None' in '\<{tag}\>' block.\n"
             all_allowoverride = False
 
         options_matches = re.findall(r"^\s*Options\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if options_matches and any(val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
-            logging.warning(f"'Options' is set to 'Includes' in <{tag}> block.")
-            response.check_result += f"- Options is not set to 'Includes' in <{tag}> block.\n"
+            logging.warning(f"'Options' is set to 'Includes' in '<{tag}>' block.")
+            response.check_result += f"- Options is not set to 'Includes' in '\<{tag}\>' block.\n"
             all_options = False
 
     score += 1 if all_require else 0
@@ -205,7 +205,7 @@ def check_pid_not_in_documentroot(response: Response) -> int:
     global test_counts
     test_counts += 1
     score = 0
-    response.check_result += "## PidFile is located outside the DocumentRoot.\n"
+    response.check_result += "## Check PIDFile in DocumentRoot\n"
     document_root_match = re.search(r"DocumentRoot\s+\"([^\"]+)\"", response.response_file, re.IGNORECASE)
     pidfile_match = re.search(r"PidFile\s+\"([^\"]+)\"", response.response_file, re.IGNORECASE)
 
@@ -253,7 +253,7 @@ def check_unnecessary_auth_modules(response: Response) -> int:
         response.check_result += "- The following unnecessary auth modules are not enabled:\n"
         for module in unnecessary_auth_modules:
             logging.warning(f"Disable {module}")
-            response.check_result += "  - Disable {module}\n"
+            response.check_result += f"- Disable {module}\n"
     else:
         score += 1
     return score
@@ -343,7 +343,7 @@ def check_directory_options_no_includes(response) -> int:
 
 def check_server_status_and_info_commented_out(response) -> int:
     """
-    Checks if the <Location /server-status> and <Location /server-info> blocks are commented out or absent.
+    Checks if the <Location /server-status> and <Location /server-info> blocks are commented out or properly secured.
 
     Parameters:
     - response (Response): The response object containing the configuration text.
@@ -356,20 +356,29 @@ def check_server_status_and_info_commented_out(response) -> int:
     response.check_result += "### Server Status and Info Directives\n"
     score = 0
 
+    # Check if the <Location /server-status> block is active
     if re.search(r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>", response.response_file, re.DOTALL | re.IGNORECASE):
         logging.warning("The <Location /server-status> block is active and should be commented out.")
         response.check_result += "- The <Location /server-status> block is active and should be commented out.\n"
     else:
         score += 1
 
-    # Check if the <Location /server-info> block is present and not commented out
-    if re.search(r"(?<!#)\s*<Location\s+/server-info>\s*.*?</Location>", response.response_file, re.DOTALL | re.IGNORECASE):
-        logging.warning("The <Location /server-info> block is active and should be commented out.")
-        response.check_result += "- The <Location /server-info> block is active and should be commented out.\n"
+    # Check if the <Location /server-info> block is present and properly denies access
+    server_info_match = re.search(r"(?<!#)\s*<Location\s+/server-info>\s*(.*?)</Location>", response.response_file, re.DOTALL | re.IGNORECASE)
+    if server_info_match:
+        server_info_content = server_info_match.group(1)
+
+        # Check if access is denied for all clients
+        if re.search(r"(?<!#)\s*Deny\s+from\s+all", server_info_content, re.IGNORECASE):
+            score += 1
+        else:
+            logging.warning("The <Location /server-info> block should deny access to all clients.")
+            response.check_result += "- The <Location /server-info> block should deny access to all clients.\n"
     else:
         score += 1
 
     return score
+
 
 
 def check_trace_disabled(response) -> int:
@@ -412,12 +421,12 @@ def check_trace_disabled(response) -> int:
             allowed_methods = limit_except_match.group(1).split()
             if "TRACE" in allowed_methods:
                 all_directories_compliant = False
-                response.check_result += "- TRACE is allowed in a <LimitExcept> directive, which is not recommended.\n"
+                response.check_result += "- TRACE is allowed in a \<LimitExcept\> directive, which is not recommended.\n"
                 logging.warning("TRACE is allowed in a <LimitExcept> directive.")
                 break
         else:
             all_directories_compliant = False
-            response.check_result += "- No <LimitExcept> directive found in a <Directory> block.\n"
+            response.check_result += "- No \<LimitExcept\> directive found in a \<Directory\> block.\n"
             logging.warning("No <LimitExcept> directive found in a <Directory> block.")
             break
 
@@ -431,7 +440,7 @@ def check_security_headers(response) -> int:
     """
     Checks if the <IfModule headers_module> block contains the correct security headers:
     - RequestHeader unset Proxy early
-    - Header always set X-Frame-Options "SAMEORIGIN"
+    - Header always set X-Frame-Options "SAMEORIGIN" or "DENY"
     - Header always set X-XSS-Protection "1; mode=block"
     - Header always set X-Content-Type-Options "nosniff"
     - Header always set Content-Security-Policy "default-src 'self';" or "frame-ancestors 'self'"
@@ -440,28 +449,29 @@ def check_security_headers(response) -> int:
     - response (Response): The response object containing the configuration text.
 
     Returns:
-    - int: A score where 1 point is given for a compliant configuration, up to a maximum of 1.
+    - int: A score where 1 point is given for each compliant configuration, up to a maximum of 5.
     """
     global test_counts
-    test_counts += 1
+    test_counts += 5
     response.check_result += "### Security Headers\n"
     score = 0
 
-    security_headers_pattern = (
-        r"<IfModule\s+headers_module>\s*"
-        r"(?=.*?RequestHeader\s+unset\s+Proxy\s+early)"
-        r"(?=.*?Header\s+always\s+set\s+X-Frame-Options\s+\"?SAMEORIGIN\"?)"
-        r"(?=.*?Header\s+always\s+set\s+X-XSS-Protection\s+\"?1;\s+mode=block\"?)"
-        r"(?=.*?Header\s+always\s+set\s+X-Content-Type-Options\s+\"?nosniff\"?)"
-        r"(?=.*?Header\s+always\s+set\s+Content-Security-Policy\s+\"?(default-src\s+'self';|frame-ancestors\s+'self')\"?)"
-        r".*?</IfModule>"
-    )
+    # Patterns for individual security headers
+    patterns = {
+        "Proxy early": r"RequestHeader\s+unset\s+Proxy\s+early",
+        "X-Frame-Options": r"Header\s+always\s+set\s+X-Frame-Options\s+\"?(SAMEORIGIN|DENY)\"?",
+        "X-XSS-Protection": r"Header\s+always\s+set\s+X-XSS-Protection\s+\"?1;\s+mode=block\"?",
+        "X-Content-Type-Options": r"Header\s+always\s+set\s+X-Content-Type-Options\s+\"?nosniff\"?",
+        "Content-Security-Policy": r"Header\s+always\s+set\s+Content-Security-Policy\s+\"?(default-src\s+'self';|frame-ancestors\s+'self')\"?"
+    }
 
-    if re.search(security_headers_pattern, response.response_file, re.DOTALL | re.IGNORECASE):
-        score += 1
-    else:
-        response.check_result += "- Missing or incorrect security headers in <IfModule headers_module>.\n"
-        logging.warning("Missing or incorrect security headers.")
+    # Check each pattern and award points for each correctly configured header
+    for header, pattern in patterns.items():
+        if re.search(pattern, response.response_file, re.IGNORECASE):
+            score += 1
+        else:
+            response.check_result += f"- Missing or incorrect {header} configuration.\n"
+            logging.warning(f"Missing or incorrect {header} configuration.")
 
     return score
 

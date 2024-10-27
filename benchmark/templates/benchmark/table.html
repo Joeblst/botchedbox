@@ -12,14 +12,20 @@
         </thead>
         <tbody>
         {% for test in tests %}
-            <tr>
-                <td>{{ test.benchmark_id }}</td>
-                <td>{{ test.testcase_id }}</td>
-                <td>{{ test.model }}</td>
-                <td>{{ test.score }}</td>
-                <td>{{ test.state }}</td>
-                <td>{{ test.timestamp }}</td>
-            </tr>
+            {% if test.benchmark_id %}
+                <tr onclick="window.location.href='{% url 'benchmark' test.benchmark_id %}'" style="cursor: pointer;">
+                    <td>{{ test.benchmark_id }}</td>
+                    <td>{{ test.testcase_id }}</td>
+                    <td>{{ test.model }}</td>
+                    <td>{{ test.score }}</td>
+                    <td>{{ test.state }}</td>
+                    <td>{{ test.timestamp }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">No Benchmark ID available</td>
+                </tr>
+            {% endif %}
         {% endfor %}
         </tbody>
     </table>

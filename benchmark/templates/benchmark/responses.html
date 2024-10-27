@@ -1,0 +1,50 @@
+{% extends 'pagelayout.html' %}
+{% load static %}
+{% load markdownify %}
+
+{% block content %}
+    <h2>Benchmark Test Responses</h2>
+    <div class="accordion" id="testResponsesAccordion">
+        {% for model, responses in test_responses.items %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-{{ model }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ model }}" aria-expanded="false" aria-controls="collapse-{{ model }}">
+                        Model: {{ model }}
+                    </button>
+                </h2>
+                <div id="collapse-{{ model }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ model }}" data-bs-parent="#testResponsesAccordion">
+                    <div class="accordion-body">
+                        {% for response in responses %}
+                            <h5>Response for {{ response.test.testcase_id }}</h5>
+                            <p><strong>Duration:</strong> {{ response.duration }}s</p>
+
+                            <div class="mb-3">
+                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#content-{{ response.id }}" aria-expanded="false" aria-controls="content-{{ response.id }}">
+                                    Toggle Content
+                                </button>
+                                <div id="content-{{ response.id }}" class="collapse mt-2">
+                                    <div class="card card-body">
+                                        <p><strong>Content:</strong> {{ response.content|markdownify }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#check-result-{{ response.id }}" aria-expanded="false" aria-controls="check-result-{{ response.id }}">
+                                    Toggle Check Result
+                                </button>
+                                <div id="check-result-{{ response.id }}" class="collapse mt-2">
+                                    <div class="card card-body">
+                                        {{ response.check_result|markdownify }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
