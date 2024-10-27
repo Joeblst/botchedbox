@@ -478,57 +478,87 @@ def check_security_headers(response) -> int:
 
 def check_ssl_configuration(response) -> int:
     """
-    Checks if the SSL configuration meets the following criteria:
-    1. SSLProtocol allows only TLSv1.2 and TLSv1.3.
-    2. SSLHonorCipherOrder is set to On.
-    3. SSLCipherSuite is properly configured to exclude insecure ciphers.
+    Checks if the SSL configuration meets security criteria for Apache 2.4:
+    1. SSLProtocol allows only secure protocols (TLSv1.2 and TLSv1.3) or disables insecure ones
+    2. SSLHonorCipherOrder is set to On
+    3. SSLCipherSuite is properly configured with secure ciphers
+
+    Supports both additive (+TLSv1.2 +TLSv1.3) and subtractive (-SSLv3 -TLSv1) approaches.
 
     Parameters:
-    - response (Response): The response object containing the configuration text.
+    - response (Response): The response object containing the configuration text
 
     Returns:
-    - int: A score where 1 point is given for each compliant check, up to a maximum of 3.
+    - int: Score from 0-3 based on compliance
     """
     global test_counts
     test_counts += 3
     response.check_result += "### SSL Configuration\n"
     score = 0
 
-    # Check if SSLProtocol allows only TLSv1.2 and TLSv1.3
+    # Check SSLProtocol configuration
     ssl_protocol_pattern = r"^\s*SSLProtocol\s+(.*)$"
     protocol_match = re.search(ssl_protocol_pattern, response.response_file, re.MULTILINE | re.IGNORECASE)
     if protocol_match:
-        allowed_protocols = protocol_match.group(1).strip()
-        if allowed_protocols in {"TLSv1.2 TLSv1.3", "TLSv1.3 TLSv1.2"}:
-            score += 1
+        protocols = protocol_match.group(1).lower().strip().split()
+
+        # Handle both additive and subtractive approaches
+        if "all" in protocols:
+            # Subtractive approach: must disable all insecure protocols
+            required_disabled = {"-sslv3", "-tlsv1", "-tlsv1.1"}
+            if all(proto in [p.lower() for p in protocols] for proto in required_disabled):
+                score += 1
         else:
-            response.check_result += "- SSLProtocol should allow only TLSv1.2 and TLSv1.3.\n"
-            logging.warning("SSLProtocol should allow only TLSv1.2 and TLSv1.3.")
+            # Additive approach: check if only TLSv1.2 and/or TLSv1.3 are enabled
+            allowed_protocols = {"+tlsv1.2", "+tlsv1.3", "tlsv1.2", "tlsv1.3"}
+            disabled_base = {"-all"}
+
+            protocols_lower = {p.lower() for p in protocols}
+
+            # Check if configuration starts with -all and only enables secure protocols
+            if (disabled_base.intersection(protocols_lower) or len(protocols_lower) == len(
+                    allowed_protocols.intersection(protocols_lower))) and \
+                    all(p.lower() in allowed_protocols for p in protocols):
+                score += 1
+
+        if score == 0:
+            response.check_result += "- SSLProtocol should either:\n  1. Use 'all -SSLv3 -TLSv1 -TLSv1.1' or\n  2. Use '-all +TLSv1.2 +TLSv1.3'\n"
+            logging.warning("SSLProtocol configuration is not secure")
     else:
-        response.check_result += "- SSLProtocol is not set.\n"
-        logging.warning("SSLProtocol is not set.")
+        response.check_result += "- SSLProtocol is not set\n"
+        logging.warning("SSLProtocol is not set")
 
     # Check if SSLHonorCipherOrder is set to On
     ssl_honor_cipher_order_pattern = r"^\s*SSLHonorCipherOrder\s+On\s*$"
     if re.search(ssl_honor_cipher_order_pattern, response.response_file, re.MULTILINE | re.IGNORECASE):
         score += 1
     else:
-        response.check_result += "- SSLHonorCipherOrder must be set to On.\n"
-        logging.warning("SSLHonorCipherOrder must be set to On.")
+        response.check_result += "- SSLHonorCipherOrder must be set to On\n"
+        logging.warning("SSLHonorCipherOrder must be set to On")
 
-    # Check if SSLCipherSuite excludes insecure ciphers
+    # Check SSLCipherSuite configuration
     ssl_cipher_suite_pattern = r"^\s*SSLCipherSuite\s+(.*)$"
     cipher_suite_match = re.search(ssl_cipher_suite_pattern, response.response_file, re.MULTILINE | re.IGNORECASE)
     if cipher_suite_match:
-        cipher_suite = cipher_suite_match.group(1).strip()
-        required_exclusions = {"!EXP", "!NULL", "!LOW", "!SSLv2", "!RC4", "!aNULL"}
-        if all(exclusion in cipher_suite for exclusion in required_exclusions):
+        cipher_suite = cipher_suite_match.group(1).lower().strip()
+
+        # Required security settings
+        required_exclusions = {"!null", "!anull", "!enull", "!exp", "!rc4", "!des", "!3des", "!md5",
+                               "!psk", "!dss", "!dh", "!low", "!medium"}
+        required_inclusions = {"high", "tlsv1.2", "tlsv1.3", "aesgcm", "chacha20"}
+
+        exclusions_present = {e.lower() for e in re.findall(r"!\S+", cipher_suite)}
+        inclusions_present = {i.lower() for i in re.findall(r"\b\S+\b", cipher_suite)}
+
+        if (required_exclusions.issubset(exclusions_present) and
+                any(inc in inclusions_present for inc in required_inclusions)):
             score += 1
         else:
-            response.check_result += "- SSLCipherSuite does not properly exclude insecure ciphers.\n"
-            logging.warning("SSLCipherSuite does not properly exclude insecure ciphers.")
+            missing_exclusions = required_exclusions - exclusions_present
+            response.check_result += f"- SSLCipherSuite should exclude: {', '.join(missing_exclusions)}\n"
+            logging.warning("SSLCipherSuite configuration is not secure")
     else:
-        response.check_result += "- SSLCipherSuite is not set.\n"
-        logging.warning("SSLCipherSuite is not set.")
+        response.check_result += "- SSLCipherSuite is not set\n"
+        logging.warning("SSLCipherSuite is not set")
 
     return score
