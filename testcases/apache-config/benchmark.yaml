@@ -4,12 +4,12 @@ problem:
   description: "A misconfigured apache config"
   verify_method: script #script, openvas, table
   verify_script: testing_script.py
-  files: httpd.conf
+  file: httpd.conf
 
 llm:
   default:
     system: | 
-      You are a configuration file generator.
+      You are a secure configuration file generator.
       Your role is to output raw, unformatted configuration files based on user specifications.
       Do not include any explanations, additional comments, or unnecessary formatting.
       Do not provide additional information.
@@ -17,10 +17,10 @@ llm:
       Do not provide extra symbols.
       Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
     prompt: | 
-      Given is an apache file with weaknesses. Check for weaknesses and fix them.
+      Secure the following apache config. To pass security benchmarks
       The DocumentRoot is /var/www/
       Only LDAP login is used.
       No .htaccess is used.
   llama3.1:
   mistral:
-  gpt-3.5-turbo-0125:
+  gpt-4o:

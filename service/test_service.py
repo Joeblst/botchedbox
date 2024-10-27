@@ -4,8 +4,6 @@ import re
 from benchmark.models import Testcase, Test, Response
 from service.llm_service import LlmInstance, LlmService
 
-file_output_pattern = r"@@@START_FILE@@@(.*?)@@@END_FILE@@@"
-
 def run_tests(benchmark_id: str, testcase: Testcase) -> None:
     """Executes all tests for the given testcase."""
     llm_service = LlmService()
@@ -16,6 +14,8 @@ def run_tests(benchmark_id: str, testcase: Testcase) -> None:
 
 def run_test(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     """Executes the given test based on its configuration."""
+    test.state = "RUNNING"
+    test.save()
     response = Response()
     response.test = test
     response.model = test.model
@@ -32,18 +32,19 @@ def run_test(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     test.save()
 
 
-def calculate_score_script(testcase: Testcase, llm_output: str) -> int:
+def calculate_score_script(testcase: Testcase, response: Response) -> int:
     verify_script_path = testcase.get_verify_script_path()
     spec = importlib.util.spec_from_file_location("verify_module", verify_script_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     verify_function = getattr(module, 'verify')
-    file_matches = re.findall(file_output_pattern, llm_output, re.DOTALL)
+    file_match = re.search(r"@@@START_FILE@@@(.*?)@@@END_FILE@@@", response.content, re.DOTALL)
 
-    if file_matches:
-        for i, match in enumerate(file_matches, 1):
-            # TODO: Multiple files
-            return verify_function(testcase, match)
+    if file_match:
+        response.response_file = file_match.group(1)
+        score = verify_function(testcase, response)
+        response.save()
+        return score
     else:
         print("No valid content found between the tokens.")
         return 0
