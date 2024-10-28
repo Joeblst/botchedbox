@@ -3,7 +3,12 @@
 {% load markdownify %}
 
 {% block content %}
-    <h2>Benchmark Test Responses</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Benchmark {{ benchmark_id }} Test Responses</h2>
+        <button id="recalculateBtn" class="btn btn-secondary" onclick="recalculateScores()">
+            Recalculate Scores
+        </button>
+    </div>
     <div class="accordion" id="testResponsesAccordion">
         {% for model, responses in test_responses.items %}
             <div class="accordion-item">
@@ -47,4 +52,8 @@
             </div>
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'responses.js' %}"></script>
 {% endblock %}

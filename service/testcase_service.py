@@ -2,7 +2,8 @@ import logging
 import os
 import yaml
 
-from benchmark.models import Testcase, Test
+from benchmark.models import Testcase, Test, Response
+from service.test_service import calculate_score_script
 
 cwd = os.getcwd()
 logging.basicConfig(level=logging.INFO)
@@ -44,4 +45,17 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
         )
         test.save()
 
+def recalculate_scores(benchmark_id: str) -> None:
+    tests = Test.objects.filter(benchmark_id=benchmark_id, state='FINISHED')
 
+    for test in tests:
+        try:
+            response = Response.objects.get(test=test)
+            testcase = Testcase.objects.get(id=test.testcase_id)
+
+            # Recalculate and update score
+            test.score = calculate_score_script(testcase, response)
+            test.save()
+
+        except (Response.DoesNotExist, Testcase.DoesNotExist) as e:
+            print(f"Error processing test {test.id}: {str(e)}")

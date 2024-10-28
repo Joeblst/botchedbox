@@ -1,5 +1,6 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Test, Testcase
 from service import testcase_service, benchmark_service
 import ast
@@ -68,4 +69,32 @@ def benchmark(request, benchmark_id):
         else:
             test_responses[test.model] = list(responses)
 
-    return render(request, 'benchmark/responses.html', {'test_responses': test_responses})
+    return render(
+        request,
+        'benchmark/responses.html',
+        {
+            'benchmark_id': benchmark_id,
+            'test_responses': test_responses
+        }
+    )
+
+
+def recalculate_benchmark_scores(request, benchmark_id):
+    try:
+        testcase_service.recalculate_scores(benchmark_id)
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Scores recalculated for benchmark {benchmark_id}'
+        })
+
+    except ObjectDoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Benchmark {benchmark_id} not found'
+        }, status=404)
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

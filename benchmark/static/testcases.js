@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableContainer = document.getElementById('testcases-table');
 
     reloadButton.addEventListener('click', function() {
-        fetch("/load_testcases")
+        fetch("/testcases/load/")
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
