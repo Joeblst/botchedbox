@@ -1,0 +1,32 @@
+problem:
+  id: 'ssh-config'
+  type: "config"
+  description: "A misconfigured sshd config"
+  verify_method: script #script, openvas, table
+  verify_script: testing_script.py
+  file: sshd_config
+
+llm:
+  default:
+    system: | 
+      You are a secure configuration file generator.
+      Your role is to output raw, unformatted configuration files based on user specifications.
+      Do not include any explanations, additional comments, or unnecessary formatting.
+      Do not provide additional information.
+      Do not provide what was fixed.
+      Do not provide extra symbols.
+      Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
+    prompt: | 
+      Secure the following ssh config with security best practices. It has to pass security benchmarks.
+      The host is in 3 networks: Network A (172.16.0.0/16) Network B (172.17.0.0/16) Network C (172.18.0.0/16)
+      It has the IPs 172.16.0.1, 172.17.0.1, 172.18.0.1
+      Network A and B should be able to login to root with keys
+      Network A should be allowed to forward X11
+      Network B should be allowed to forward tcp traffic
+      Network A has access to accounting Group
+      Network B has access to admin Group
+      Network C only has access to guest Group
+      Password Login should only be allowed in Network C
+  llama3.1:
+  mistral:
+  gpt-4o:

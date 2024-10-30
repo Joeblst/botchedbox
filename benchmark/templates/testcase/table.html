@@ -5,6 +5,7 @@
             <th scope="col">ID</th>
             <th scope="col">Type</th>
             <th scope="col">Description</th>
+            <th scope="col">Actions</th> <!-- New column for delete button -->
         </tr>
         </thead>
         <tbody>
@@ -13,6 +14,12 @@
                 <td>{{ testcase.id }}</td>
                 <td>{{ testcase.type }}</td>
                 <td>{{ testcase.description }}</td>
+                <td>
+                    <form action="{% url 'delete_testcase' testcase.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
         </tbody>

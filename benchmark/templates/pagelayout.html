@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Botchedbox</title>
     {% load bootstrap5 %}
+    {% load static %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     {% load static %}
+    <link rel="stylesheet" href="{% static 'markdown.css' %}">
 </head>
 <body>
     {% include 'header/default.html' %}

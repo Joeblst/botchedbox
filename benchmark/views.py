@@ -1,6 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
+
 from .models import Test, Testcase
 from service import testcase_service, benchmark_service
 import ast
@@ -98,3 +100,9 @@ def recalculate_benchmark_scores(request, benchmark_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+def delete_testcase(request, testcase_id):
+    testcase = get_object_or_404(Testcase, id=testcase_id)
+    testcase.delete()
+    return redirect(reverse('testcases'))

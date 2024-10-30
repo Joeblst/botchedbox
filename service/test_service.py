@@ -25,7 +25,7 @@ def run_test(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     prompt = llm_prompt_config.get(test.model).get('prompt') if llm_prompt_config.get(test.model) else None
     system = system if system and system.strip() else llm_prompt_config.get('default').get('system')
     prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
-    response.content, response.duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=1, file=file)
+    response.content, response.duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=0, file=file)
     response.save()
     test.score = calculate_score_script(testcase, response)
     test.state = 'FINISHED'

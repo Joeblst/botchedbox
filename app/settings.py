@@ -44,8 +44,18 @@ INSTALLED_APPS = [
 MARKDOWNIFY = {
     "default": {
         "WHITELIST_TAGS": [
-            'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'p', 'strong', 'ul', 'pre'
-        ]
+            'a', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7',
+            'ul', 'ol', 'li', 'span', 'strong', 'em', 'code',
+            'pre', 'blockquote', 'table', 'thead', 'tbody',
+            'tr', 'th', 'td', 'hr'
+        ],
+        "MARKDOWN_EXTENSIONS": [
+            'markdown.extensions.fenced_code',
+            'markdown.extensions.tables',
+            'markdown.extensions.toc',
+        ],
+        "STRIP": False,
+        "BLEACH": True,
     }
 }
 
