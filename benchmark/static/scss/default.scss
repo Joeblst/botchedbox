@@ -1,0 +1,15 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-fluid, .row {
+    height: 100vh;
+}
+
+main {
+    overflow-y: auto;
+    height: 100%;
+}

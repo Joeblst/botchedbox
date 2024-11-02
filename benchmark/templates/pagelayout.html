@@ -2,21 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Botchedbox</title>
     {% load bootstrap5 %}
     {% load static %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'markdown.css' %}">
+    {% load sass_tags %}
+    <link rel="stylesheet" href="{% sass_src 'scss/import.scss' %}">
 </head>
 <body>
-    {% include 'header/default.html' %}
     <div class="container-fluid">
-        <div class="row">
-            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <div class="row flex-nowrap">
+            <div id="sidebar" class="shadow col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
                 {% include 'sidebar/default.html' %}
-            </nav>
+            </div>
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 {% block content %}
                 {% endblock %}

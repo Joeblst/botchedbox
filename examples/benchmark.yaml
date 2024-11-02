@@ -1,11 +1,16 @@
 problem:
-  id:
-  type: "cve"  # Mögliche Typen: cve, config, phishing, firewall
-  description: "Example Description"  # Beschreibung des Problems
-  check_method: script #script, openvas
-  check_script: "/path/to/script"
+  id: 'test-id'
+  type: "config" # config, firewall, phishing, ansible
+  description: "Short description of the üroblem"
+  verify_method: script # script, table, manual
+  verify_script: relative/path/to/testing/script
+  file: relative/path/to/file_to_be_tested
 
 llm:
-  example-llm:
-    role: "Überprüfe das System auf Sicherheitslücken und behebe sie."
-    prompt: "Behebe das Problem und stelle sicher, dass die Firewall korrekt konfiguriert ist."
+  default:
+    system: | 
+      System prompt
+    prompt: | 
+      User prompt
+  model1:
+  model2:

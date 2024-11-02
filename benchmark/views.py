@@ -1,3 +1,7 @@
+import json
+
+import yaml
+from django import forms
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -10,7 +14,6 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 executor = ThreadPoolExecutor()
-
 
 def index(request):
     return render(request, 'benchmark/default.html')
@@ -30,7 +33,6 @@ def get_testcase_infos():
                 'description': config.get('problem', {}).get('description', 'No description available'),
             })
         except (ValueError, SyntaxError) as e:
-            # Handle possible errors from ast.literal_eval
             print(f"Error parsing config for Testcase {testcase.id}: {e}")
             continue
 

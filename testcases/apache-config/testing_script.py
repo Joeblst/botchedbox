@@ -177,19 +177,19 @@ def check_directories_locations(response: Response) -> int:
     for tag, content in matches:
         if not re.search(r"^\s*Require\b", content, re.MULTILINE | re.IGNORECASE):
             logging.warning(f"Missing 'Require' directive in <{tag}> block.")
-            response.check_result += f"- Missing Require directive in '\<{tag}\>' block.\n"
+            response.check_result += f"- Missing Require directive in '<{tag}>' block.\n"
             all_require = False
 
         allowoverride_matches = re.findall(r"^\s*AllowOverride\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if not allowoverride_matches or any(val.lower() != "none" for val in allowoverride_matches):
             logging.warning(f"'AllowOverride' is not set to 'None' in <{tag}> block.")
-            response.check_result += f"- AllowOverride is not set to 'None' in '\<{tag}\>' block.\n"
+            response.check_result += f"- AllowOverride is not set to 'None' in '<{tag}>' block.\n"
             all_allowoverride = False
 
         options_matches = re.findall(r"^\s*Options\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
         if options_matches and any(val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
             logging.warning(f"'Options' is set to 'Includes' in '<{tag}>' block.")
-            response.check_result += f"- Options is not set to 'Includes' in '\<{tag}\>' block.\n"
+            response.check_result += f"- Options is not set to 'Includes' in '<{tag}>' block.\n"
             all_options = False
 
     score += 1 if all_require else 0
@@ -421,12 +421,12 @@ def check_trace_disabled(response) -> int:
             allowed_methods = limit_except_match.group(1).split()
             if "TRACE" in allowed_methods:
                 all_directories_compliant = False
-                response.check_result += "- TRACE is allowed in a \<LimitExcept\> directive, which is not recommended.\n"
+                response.check_result += "- TRACE is allowed in a <LimitExcept\> directive, which is not recommended.\n"
                 logging.warning("TRACE is allowed in a <LimitExcept> directive.")
                 break
         else:
             all_directories_compliant = False
-            response.check_result += "- No \<LimitExcept\> directive found in a \<Directory\> block.\n"
+            response.check_result += "- No <LimitExcept\> directive found in a <Directory\> block.\n"
             logging.warning("No <LimitExcept> directive found in a <Directory> block.")
             break
 

@@ -1,7 +1,7 @@
 import ast
 import os.path
-from datetime import datetime
 
+from typing import Dict, LiteralString
 from django.db import models
 
 
@@ -52,6 +52,13 @@ class Response(models.Model):
         self.content = content
         self.save()
 
+    def add_content(self, content):
+        if self.content is None:
+            self.content = content
+        else:
+            self.content += content
+        self.save()
+
     def set_duration(self, duration):
         self.duration = duration
         self.save()
@@ -73,21 +80,21 @@ class Testcase(models.Model):
         self.config = config
         self.save()
 
-    def get_config(self):
+    def get_config(self) -> Dict:
         return ast.literal_eval(self.config)
 
-    def get_verify_script_path(self):
+    def get_verify_script_path(self) -> LiteralString | str | bytes:
         config = self.get_config()
         return os.path.join(self.path, config.get('problem').get('verify_script'))
 
-    def get_file_path(self):
+    def get_file_path(self) -> LiteralString | str | bytes | None:
         config = self.get_config()
         file_name = config.get('problem').get('file')
         if file_name:
             return os.path.join(self.path, file_name)
         return None
 
-    def get_file(self):
+    def get_file(self) -> LiteralString | str | bytes | None:
         file_path = self.get_file_path()
         if file_path:
             with open(file_path, 'r') as f:

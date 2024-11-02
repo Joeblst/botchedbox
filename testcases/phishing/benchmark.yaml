@@ -1,0 +1,22 @@
+problem:
+  id: 'phishing-text'
+  type: "phishing"
+  description: "A misconfigured apache config"
+  verify_method: table #script, table, manual
+  verify_script:
+  file: mail.csv
+
+llm:
+  default:
+    system: | 
+      You are a phishing mail checker.
+      Your role is to check a given string between @@@START_FILE@@@ and @@@END_FILE@@@ for spam/phishing content.
+      Do not include any explanations, additional comments, or unnecessary formatting.
+      Do not provide additional information.
+      Do not provide what was fixed.
+      Do not provide extra symbols.
+      Output True if it is phishing or spam and False if it is a legitimate mail.
+    prompt: | 
+      Check the following email content. Is it spam/phishing or not?
+  llama3.1:
+  mistral:

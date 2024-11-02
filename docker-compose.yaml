@@ -1,8 +1,6 @@
 services:
   botchedbox:
     build: .
-    command: >
-      sh -c "python3 manage.py migrate"
     volumes:
       - .:/opt/project/
       - /var/run/docker.sock:/var/run/docker.sock
@@ -10,13 +8,13 @@ services:
       - "8000:8000"
   ollama:
     image: ollama/ollama
-    #deploy:
-    #  resources:
-    #    reservations:
-    #      devices:
-    #        - driver: nvidia
-    #          count: all
-    #          capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     volumes:
       - ollama_vol:/root/.ollama
     ports:
