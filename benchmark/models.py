@@ -85,6 +85,9 @@ class Response(models.Model):
         self.content = content
         self.save()
 
+    def get_markdown_content(self):
+        return "```\n" + self.content + "\n```"
+
     def add_content(self, content):
         if self.content is None:
             self.content = content

@@ -30,7 +30,7 @@ def testcases(request):
 def delete_testcase(request, testcase_id):
     testcase = get_object_or_404(Testcase, id=testcase_id)
     testcase.delete()
-    return redirect(reverse('testcases'))
+    return redirect(reverse('get_testcases'))
 
 
 def start_benchmark(request):
@@ -62,7 +62,7 @@ def get_benchmark(request, benchmark_id):
 def delete_benchmark(request, benchmark_id):
     benchmark = get_object_or_404(Benchmark, benchmark_id=benchmark_id)
     benchmark.delete()
-    return redirect(reverse('benchmarks'))
+    return redirect(reverse('index'))
 
 
 def get_tests(request, benchmark_id):

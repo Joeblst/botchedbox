@@ -31,8 +31,10 @@
                                 Toggle Content
                             </button>
                             <div id="content-{{ response.id }}" class="collapse mt-2">
-                                <div class="card card-body">
-                                    <p><strong>Content:</strong> {{ response.content|markdownify }}</p>
+                                <div class="card card-body markdown-content">
+                                    <div class="markdown-body">
+                                        {{ response.get_markdown_content|markdownify }}
+                                    </div>
                                 </div>
                             </div>
                         </div>

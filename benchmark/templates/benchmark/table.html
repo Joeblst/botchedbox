@@ -16,7 +16,7 @@
                     <td>{{ benchmark.state }}</td>
                     <td>{{ benchmark.timestamp }}</td>
                     <td>
-                        <form action="{% url 'index' benchmark.benchmark_id %}" method="post" style="display:inline;">
+                        <form action="{% url 'delete_benchmark' benchmark.benchmark_id %}" method="post" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                         </form>
