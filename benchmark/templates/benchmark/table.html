@@ -3,23 +3,25 @@
         <thead>
         <tr>
             <th scope="col">Benchmark-ID</th>
-            <th scope="col">Testcase-ID</th>
-            <th scope="col">Model</th>
-            <th scope="col">Score</th>
             <th scope="col">State</th>
             <th scope="col">Timestamp</th>
+            <th scope="col">Action</th>
         </tr>
         </thead>
         <tbody>
-        {% for test in tests %}
-            {% if test.benchmark_id %}
-                <tr onclick="window.location.href='{% url 'benchmark' test.benchmark_id %}'" style="cursor: pointer;">
-                    <td>{{ test.benchmark_id }}</td>
-                    <td>{{ test.testcase_id }}</td>
-                    <td>{{ test.model }}</td>
-                    <td>{{ test.score }}</td>
-                    <td>{{ test.state }}</td>
-                    <td>{{ test.timestamp }}</td>
+        {% for benchmark in benchmarks %}
+            {% if benchmark.benchmark_id %}
+                <tr onclick="window.location.href='{% url 'get_benchmark' benchmark.benchmark_id %}'" style="cursor: pointer;">
+                    <td>{{ benchmark.benchmark_id }}</td>
+                    <td>{{ benchmark.state }}</td>
+                    <td>{{ benchmark.timestamp }}</td>
+                    <td>
+                        <form action="{% url 'index' benchmark.benchmark_id %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+
                 </tr>
             {% else %}
                 <tr>

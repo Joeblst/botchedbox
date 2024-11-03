@@ -1,0 +1,65 @@
+{% extends 'pagelayout.html' %}
+{% load static %}
+{% load markdownify %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Benchmark {{ benchmark_id }} Test Responses</h2>
+        <button id="recalculateBtn" class="btn btn-secondary" onclick="recalculateScores()">
+            Recalculate Scores
+        </button>
+    </div>
+    <div class="accordion" id="testResponsesAccordion">
+        {% for response in test_responses %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-{{ response.timestamp|date:"YmdHis" }}-{{ response.model|slugify }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse-{{ response.timestamp|date:"YmdHis" }}-{{ response.model|slugify }}" aria-expanded="false"
+                            aria-controls="collapse-{{ response.timestamp|date:"YmdHis" }}-{{ response.model|slugify }}">
+                        Model: {{ response.model }} | Timestamp: {{ response.timestamp }}
+                    </button>
+                </h2>
+                <div id="collapse-{{ response.timestamp|date:"YmdHis" }}-{{ response.model|slugify }}" class="accordion-collapse collapse"
+                     aria-labelledby="heading-{{ response.timestamp|date:"YmdHis" }}-{{ response.model|slugify }}" data-bs-parent="#testResponsesAccordion">
+                    <div class="accordion-body">
+                        <h5>Response for Test Case {{ response.test.testcase_id }}</h5>
+                        <p><strong>Duration:</strong> {{ response.duration }}s</p>
+                        <div class="mb-3">
+                            <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#content-{{ response.id }}" aria-expanded="false"
+                                    aria-controls="content-{{ response.id }}">
+                                Toggle Content
+                            </button>
+                            <div id="content-{{ response.id }}" class="collapse mt-2">
+                                <div class="card card-body">
+                                    <p><strong>Content:</strong> {{ response.content|markdownify }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#check-result-{{ response.id }}" aria-expanded="false"
+                                    aria-controls="check-result-{{ response.id }}">
+                                Toggle Check Result
+                            </button>
+                            <div id="check-result-{{ response.id }}" class="collapse mt-2">
+                                <div class="card card-body markdown-content">
+                                    <div class="markdown-body">
+                                        {{ response.check_result|markdownify }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/responses.js' %}"></script>
+{% endblock %}

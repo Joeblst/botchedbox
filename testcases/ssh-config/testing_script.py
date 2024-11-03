@@ -75,7 +75,9 @@ def verify(testcase: Testcase, response: Response) -> int:
     return_code, ssh_test_output = get_ssh_test_output(testcase, response)
     if return_code != 0:
         response.check_result = "### SSH Configuration Error\n\n```\n" + ssh_test_output + "\n```"
-        return -1
+        response.set_valid(False)
+        return 0
+    response.set_valid(True)
 
     config = SSHConfigParser().parse_string(response.response_file)
 

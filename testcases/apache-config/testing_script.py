@@ -66,12 +66,14 @@ def validate_apache_config(testcase: Testcase, response: Response) -> int:
             {test_result.stderr.strip()}\n
             ```\n
             """
+            response.set_valid(False)
             return 0
         else:
             logging.info("Apache configuration is valid.")
             response.check_result += f"""
             Config is valid.
             """
+            response.set_valid(True)
             return 1
     except subprocess.CalledProcessError as e:
         logging.error(f"Error during Apache config validation: {e.stderr}")
@@ -81,6 +83,7 @@ def validate_apache_config(testcase: Testcase, response: Response) -> int:
         {e.stderr.strip()}\n
         ```\n
         """
+        response.set_valid(False)
         return 0
     finally:
         subprocess.run(["docker", "rm", "-f", container_name], check=False)

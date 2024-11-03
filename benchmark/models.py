@@ -5,8 +5,22 @@ from typing import Dict, LiteralString
 from django.db import models
 
 
+class Benchmark(models.Model):
+    benchmark_id = models.CharField(max_length=100, primary_key=True)
+    state = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def set_benchmark_id(self, benchmark_id):
+        self.benchmark_id = benchmark_id
+        self.save()
+
+    def set_state(self, state):
+        self.state = state
+        self.save()
+
+
 class Test(models.Model):
-    benchmark_id = models.CharField(max_length=100)
+    benchmark = models.ForeignKey(Benchmark, on_delete=models.CASCADE, related_name='responses')
     testcase_id = models.CharField(max_length=100)
     problem_type = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
@@ -15,11 +29,7 @@ class Test(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['benchmark_id', 'testcase_id', 'model']
-
-    def set_benchmark_id(self, benchmark_id):
-        self.benchmark_id = benchmark_id
-        self.save()
+        unique_together = ['benchmark', 'testcase_id', 'model']
 
     def set_testcase_id(self, testcase_id):
         self.testcase_id = testcase_id

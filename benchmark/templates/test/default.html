@@ -1,0 +1,14 @@
+{% extends 'pagelayout.html' %}
+{% load static %}
+
+{% block content %}
+    <div id="overview" class="mt-3">
+        <div id="overview-table">
+            {% include 'test/table.html' %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/test.js' %}"></script>
+{% endblock %}

@@ -3,8 +3,9 @@ import logging
 import os
 
 import yaml
+from xxsubtype import bench
 
-from benchmark.models import Testcase, Test, Response
+from benchmark.models import Testcase, Test, Response, Benchmark
 from service.test_service import calculate_score_script
 
 cwd = os.getcwd()
@@ -54,14 +55,14 @@ def load_testcases() -> None:
         testcase.save()
 
 
-def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
+def run_testcase(benchmark: Benchmark, testcase: Testcase) -> None:
     """Executes the given testcase based on its configuration."""
     testcase_config = testcase.get_config()
     for llm in testcase_config.get('llm'):
         if llm == 'default':
             continue
         test = Test(
-            benchmark_id=benchmark_id,
+            benchmark=benchmark,
             testcase_id=testcase.id,
             model=llm,
             state='PENDING'
@@ -69,17 +70,14 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
         test.save()
 
 
-def recalculate_scores(benchmark_id: str) -> None:
-    tests = Test.objects.filter(benchmark_id=benchmark_id, state='FINISHED')
+def recalculate_score(test: Test) -> None:
+    try:
+        response = Response.objects.get(test=test)
+        testcase = Testcase.objects.get(id=test.testcase_id)
 
-    for test in tests:
-        try:
-            response = Response.objects.get(test=test)
-            testcase = Testcase.objects.get(id=test.testcase_id)
+        # Recalculate and update score
+        test.score = calculate_score_script(testcase, response)
+        test.save()
 
-            # Recalculate and update score
-            test.score = calculate_score_script(testcase, response)
-            test.save()
-
-        except (Response.DoesNotExist, Testcase.DoesNotExist) as e:
-            print(f"Error processing test {test.id}: {str(e)}")
+    except (Response.DoesNotExist, Testcase.DoesNotExist) as e:
+        print(f"Error processing test {test.id}: {str(e)}")

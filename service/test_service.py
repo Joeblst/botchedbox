@@ -5,15 +5,15 @@ from typing import Tuple
 
 import pandas as pd
 
-from benchmark.models import Testcase, Test, Response
+from benchmark.models import Testcase, Test, Response, Benchmark
 from service.llm_service import LlmInstance, LlmService
 
 
-def run_tests(benchmark_id: str, testcase: Testcase) -> None:
+def run_tests(benchmark: Benchmark, testcase: Testcase) -> None:
     """Executes all tests for the given testcase."""
     config = testcase.get_config().get('problem')
     llm_service = LlmService()
-    for test in Test.objects.filter(benchmark_id=benchmark_id, testcase_id=testcase.id, state='PENDING'):
+    for test in Test.objects.filter(benchmark=benchmark, testcase_id=testcase.id, state='PENDING'):
         llm_instance = llm_service.get_instance(test.model)
         if config.get('verify_method') == 'script':
             run_test_script(testcase, test, llm_instance)
@@ -46,7 +46,7 @@ def run_test_script(testcase: Testcase, test: Test, llm_instance: LlmInstance) -
     )
     response.save()
     test.score = calculate_score_script(testcase, response)
-    test.state.set_state('FINISHED')
+    test.set_state('FINISHED')
 
 
 def calculate_score_script(testcase: Testcase, response: Response) -> int:
@@ -73,6 +73,7 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
     df = pd.read_csv(file, sep=";", quotechar='"')
     score_weighting = 100 / len(df) if len(df) > 0 else 1
     line = 0
+    had_exception = False
     for index, row in df.iterrows():
         try:
             line += 1
@@ -82,9 +83,11 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
             response.duration += duration
             test.score += (1 * score_weighting) if row[-1] == _interpret_bool_string(content) else 0
         except Exception as e:
+            had_exception = True
             continue
         finally:
             response.save()
+    response.set_valid(had_exception)
     test.set_state('FINISHED')
 
 
