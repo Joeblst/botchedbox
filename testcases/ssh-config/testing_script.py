@@ -1,17 +1,17 @@
 import logging
 import os
+import re
 import subprocess
 import tempfile
-import re
+import math
 from typing import Tuple, List
 
-import math
-
 from benchmark.models import Testcase, Response
-from test_helper.ssh_config_helper import SSHConfigParser, SSHConfig, SSHOption, MatchBlock
+from test_helper.ssh_config_helper import SSHConfigParser, MatchBlock
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 test_count = 0
+
 
 def get_ssh_test_output(testcase: Testcase, response: Response) -> Tuple[int, str]:
     """Validate SSH configuration using a Docker container and return the output."""

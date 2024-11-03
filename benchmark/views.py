@@ -1,52 +1,29 @@
-import json
-
-import yaml
-from django import forms
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse
-from django.urls import reverse
-
-from .models import Test, Testcase
-from service import testcase_service, benchmark_service
-import ast
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+
+from service import testcase_service, benchmark_service
+from .models import Test, Testcase
+
 executor = ThreadPoolExecutor()
+
 
 def index(request):
     return render(request, 'benchmark/default.html')
 
 
-def get_testcase_infos():
-    """Helper function to get formatted testcase information."""
-    testcase_objs = Testcase.objects.all()
-    testcase_infos = []
-
-    for testcase in testcase_objs:
-        try:
-            config = ast.literal_eval(testcase.config)
-            testcase_infos.append({
-                'id': testcase.id,
-                'type': config.get('problem', {}).get('type', 'Unknown'),
-                'description': config.get('problem', {}).get('description', 'No description available'),
-            })
-        except (ValueError, SyntaxError) as e:
-            print(f"Error parsing config for Testcase {testcase.id}: {e}")
-            continue
-
-    return testcase_infos
-
-
 def load_testcases(request):
     testcase_service.load_testcases()
-    context = {'testcase_infos': get_testcase_infos()}
+    context = {'testcase_infos': testcase_service.get_testcase_infos()}
     return render(request, 'testcase/table.html', context)
 
 
 def testcases(request):
-    context = {'testcase_infos': get_testcase_infos()}
+    context = {'testcase_infos': testcase_service.get_testcase_infos()}
     return render(request, 'testcase/default.html', context)
 
 

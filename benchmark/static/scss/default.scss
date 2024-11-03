@@ -1,15 +1,15 @@
 html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .container-fluid, .row {
-    height: 100vh;
+  height: 100vh;
 }
 
 main {
-    overflow-y: auto;
-    height: 100%;
+  overflow-y: auto;
+  height: 100%;
 }

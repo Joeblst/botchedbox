@@ -1,9 +1,6 @@
-import ast
-import multiprocessing
-from concurrent.futures.thread import ThreadPoolExecutor
-
-from benchmark.models import Testcase, Test
+from benchmark.models import Testcase
 from service import testcase_service, test_service
+
 
 def run_benchmark(benchmark_id: str):
     for testcase in Testcase.objects.all():

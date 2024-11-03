@@ -1,5 +1,7 @@
+import ast
 import logging
 import os
+
 import yaml
 
 from benchmark.models import Testcase, Test, Response
@@ -8,6 +10,27 @@ from service.test_service import calculate_score_script
 cwd = os.getcwd()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def get_testcase_infos():
+    """Helper function to get formatted testcase information."""
+    testcase_objs = Testcase.objects.all()
+    testcase_infos = []
+
+    for testcase in testcase_objs:
+        try:
+            config = ast.literal_eval(testcase.config)
+            testcase_infos.append({
+                'id': testcase.id,
+                'type': config.get('problem', {}).get('type', 'Unknown'),
+                'description': config.get('problem', {}).get('description', 'No description available'),
+            })
+        except (ValueError, SyntaxError) as e:
+            print(f"Error parsing config for Testcase {testcase.id}: {e}")
+            continue
+
+    return testcase_infos
+
 
 def load_testcases() -> None:
     """Loads test cases from the '../testcases' directory and saves them to the database."""
@@ -44,6 +67,7 @@ def run_testcase(benchmark_id: str, testcase: Testcase) -> None:
             state='PENDING'
         )
         test.save()
+
 
 def recalculate_scores(benchmark_id: str) -> None:
     tests = Test.objects.filter(benchmark_id=benchmark_id, state='FINISHED')

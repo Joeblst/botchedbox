@@ -1,14 +1,16 @@
-import math
+import logging
 import os
 import re
 import subprocess
 import tempfile
-import logging
+
+import math
 
 from benchmark.models import Testcase, Response
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 test_counts = 0
+
 
 def validate_apache_config(testcase: Testcase, response: Response) -> int:
     """Validate Apache site config using a Docker container."""
@@ -187,7 +189,8 @@ def check_directories_locations(response: Response) -> int:
             all_allowoverride = False
 
         options_matches = re.findall(r"^\s*Options\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
-        if options_matches and any(val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
+        if options_matches and any(
+                val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
             logging.warning(f"'Options' is set to 'Includes' in '<{tag}>' block.")
             response.check_result += f"- Options is not set to 'Includes' in '<{tag}>' block.\n"
             all_options = False
@@ -357,14 +360,16 @@ def check_server_status_and_info_commented_out(response) -> int:
     score = 0
 
     # Check if the <Location /server-status> block is active
-    if re.search(r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>", response.response_file, re.DOTALL | re.IGNORECASE):
+    if re.search(r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>", response.response_file,
+                 re.DOTALL | re.IGNORECASE):
         logging.warning("The <Location /server-status> block is active and should be commented out.")
         response.check_result += "- The <Location /server-status> block is active and should be commented out.\n"
     else:
         score += 1
 
     # Check if the <Location /server-info> block is present and properly denies access
-    server_info_match = re.search(r"(?<!#)\s*<Location\s+/server-info>\s*(.*?)</Location>", response.response_file, re.DOTALL | re.IGNORECASE)
+    server_info_match = re.search(r"(?<!#)\s*<Location\s+/server-info>\s*(.*?)</Location>", response.response_file,
+                                  re.DOTALL | re.IGNORECASE)
     if server_info_match:
         server_info_content = server_info_match.group(1)
 
@@ -378,7 +383,6 @@ def check_server_status_and_info_commented_out(response) -> int:
         score += 1
 
     return score
-
 
 
 def check_trace_disabled(response) -> int:

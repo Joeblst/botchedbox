@@ -1,7 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const reloadButton = document.getElementById('start-button');
 
-    reloadButton.addEventListener('click', function() {
+    reloadButton.addEventListener('click', function () {
         fetch("/benchmarks/start/")
             .then(response => {
                 if (!response.ok) {

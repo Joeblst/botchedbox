@@ -1,7 +1,7 @@
 import ast
 import os.path
-
 from typing import Dict, LiteralString
+
 from django.db import models
 
 
@@ -13,8 +13,17 @@ class Test(models.Model):
     score = models.IntegerField(default=0, blank=True, null=True)
     state = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         unique_together = ['benchmark_id', 'testcase_id', 'model']
+
+    def set_benchmark_id(self, benchmark_id):
+        self.benchmark_id = benchmark_id
+        self.save()
+
+    def set_testcase_id(self, testcase_id):
+        self.testcase_id = testcase_id
+        self.save()
 
     def set_problem_type(self, problem_type):
         self.problem_type = problem_type
@@ -25,6 +34,10 @@ class Test(models.Model):
         self.save()
 
     def set_score(self, score):
+        self.score += score
+        self.save()
+
+    def add_score(self, score):
         self.score = score
         self.save()
 
@@ -32,8 +45,13 @@ class Test(models.Model):
         self.state = state
         self.save()
 
+    def set_timestamp(self, timestamp):
+        self.timestamp = timestamp
+        self.save()
+
     def __str__(self):
         return f"Result for {self.benchmark_id}-{self.testcase_id} with {self.model}"
+
 
 class Response(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='responses')
@@ -41,8 +59,13 @@ class Response(models.Model):
     content = models.TextField(blank=True, null=True)
     response_file = models.TextField(blank=True, null=True)
     check_result = models.TextField(blank=True, null=True)
+    valid = models.BooleanField(default=False)
     duration = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    def set_test(self, test):
+        self.test = test
+        self.save()
 
     def set_model(self, model):
         self.model = model
@@ -59,8 +82,30 @@ class Response(models.Model):
             self.content += content
         self.save()
 
+    def set_response_file(self, response_file):
+        self.response_file = response_file
+        self.save()
+
+    def set_check_result(self, check_result):
+        self.check_result = check_result
+        self.save()
+
+    def add_check_result(self, check_result):
+        if self.check_result is None:
+            self.check_result = ''
+        self.check_result += check_result
+        self.save()
+
+    def set_valid(self, valid):
+        self.valid = valid
+        self.save()
+
     def set_duration(self, duration):
         self.duration = duration
+        self.save()
+
+    def set_timestamp(self, timestamp):
+        self.timestamp = timestamp
         self.save()
 
     def __str__(self):

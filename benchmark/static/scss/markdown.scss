@@ -5,7 +5,7 @@
   margin: 0;
   color: #1f2328;
   background-color: #ffffff;
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   font-size: 16px;
   line-height: 1.5;
   word-wrap: break-word;
@@ -380,11 +380,11 @@
   content: "";
 }
 
-.markdown-body>*:first-child {
+.markdown-body > *:first-child {
   margin-top: 0 !important;
 }
 
-.markdown-body>*:last-child {
+.markdown-body > *:last-child {
   margin-bottom: 0 !important;
 }
 
@@ -420,11 +420,11 @@
   margin-bottom: 1rem;
 }
 
-.markdown-body blockquote>:first-child {
+.markdown-body blockquote > :first-child {
   margin-top: 0;
 }
 
-.markdown-body blockquote>:last-child {
+.markdown-body blockquote > :last-child {
   margin-bottom: 0;
 }
 
@@ -523,7 +523,7 @@
   list-style-type: decimal;
 }
 
-.markdown-body div>ol:not([type]) {
+.markdown-body div > ol:not([type]) {
   list-style-type: decimal;
 }
 
@@ -535,11 +535,11 @@
   margin-bottom: 0;
 }
 
-.markdown-body li>p {
+.markdown-body li > p {
   margin-top: 1rem;
 }
 
-.markdown-body li+li {
+.markdown-body li + li {
   margin-top: .25em;
 }
 
@@ -570,7 +570,7 @@
   border: 1px solid #d1d9e0;
 }
 
-.markdown-body table td>:last-child {
+.markdown-body table td > :last-child {
   margin-bottom: 0;
 }
 
@@ -606,7 +606,7 @@
   overflow: hidden;
 }
 
-.markdown-body span.frame>span {
+.markdown-body span.frame > span {
   display: block;
   float: left;
   width: auto;
@@ -634,7 +634,7 @@
   clear: both;
 }
 
-.markdown-body span.align-center>span {
+.markdown-body span.align-center > span {
   display: block;
   margin: 13px auto 0;
   overflow: hidden;
@@ -652,7 +652,7 @@
   clear: both;
 }
 
-.markdown-body span.align-right>span {
+.markdown-body span.align-right > span {
   display: block;
   margin: 13px 0 0;
   overflow: hidden;
@@ -682,7 +682,7 @@
   overflow: hidden;
 }
 
-.markdown-body span.float-right>span {
+.markdown-body span.float-right > span {
   display: block;
   margin: 13px auto 0;
   overflow: hidden;
@@ -716,7 +716,7 @@
   font-size: 100%;
 }
 
-.markdown-body pre>code {
+.markdown-body pre > code {
   padding: 0;
   margin: 0;
   word-break: normal;
@@ -815,10 +815,10 @@
 
 .markdown-body .footnotes li:target::before {
   position: absolute;
-  top: calc(0.5rem*-1);
-  right: calc(0.5rem*-1);
-  bottom: calc(0.5rem*-1);
-  left: calc(1.5rem*-1);
+  top: calc(0.5rem * -1);
+  right: calc(0.5rem * -1);
+  bottom: calc(0.5rem * -1);
+  left: calc(1.5rem * -1);
   pointer-events: none;
   content: "";
   border: 2px solid #0969da;
@@ -970,7 +970,7 @@
 .markdown-body g-emoji {
   display: inline-block;
   min-width: 1ch;
-  font-family: "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 1em;
   font-style: normal !important;
   font-weight: 400;
@@ -995,7 +995,7 @@
   cursor: pointer;
 }
 
-.markdown-body .task-list-item+.task-list-item {
+.markdown-body .task-list-item + .task-list-item {
   margin-top: 0.25rem;
 }
 
@@ -1036,11 +1036,11 @@
   border-left: .25em solid #d1d9e0;
 }
 
-.markdown-body .markdown-alert>:first-child {
+.markdown-body .markdown-alert > :first-child {
   margin-top: 0;
 }
 
-.markdown-body .markdown-alert>:last-child {
+.markdown-body .markdown-alert > :last-child {
   margin-bottom: 0;
 }
 
@@ -1091,6 +1091,6 @@
   color: #d1242f;
 }
 
-.markdown-body>*:first-child>.heading-element:first-child {
+.markdown-body > *:first-child > .heading-element:first-child {
   margin-top: 0 !important;
 }

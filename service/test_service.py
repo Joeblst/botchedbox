@@ -8,6 +8,7 @@ import pandas as pd
 from benchmark.models import Testcase, Test, Response
 from service.llm_service import LlmInstance, LlmService
 
+
 def run_tests(benchmark_id: str, testcase: Testcase) -> None:
     """Executes all tests for the given testcase."""
     config = testcase.get_config().get('problem')
@@ -32,11 +33,17 @@ def _prepare_test(testcase: Testcase, test: Test) -> Tuple[Response, str, str]:
     prompt = prompt if prompt and prompt.strip() else llm_prompt_config.get('default').get('prompt')
     return response, prompt, system
 
+
 def run_test_script(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     """Executes the given test based on its configuration."""
     response, prompt, system = _prepare_test(testcase, test)
     file = testcase.get_file()
-    response.content, response.duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=0, file=file)
+    response.content, response.duration = llm_instance.execute_timed_prompt(
+        system=system,
+        prompt=prompt,
+        temperature=0,
+        file=file
+    )
     response.save()
     test.score = calculate_score_script(testcase, response)
     test.state.set_state('FINISHED')
@@ -69,7 +76,8 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
     for index, row in df.iterrows():
         try:
             line += 1
-            content, duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=1, file=row[0])
+            content, duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=1,
+                                                                  file=row[0])
             response.add_content(f'line + :{content}\n')
             response.duration += duration
             test.score += (1 * score_weighting) if row[-1] == _interpret_bool_string(content) else 0

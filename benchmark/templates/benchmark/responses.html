@@ -12,19 +12,25 @@
     <div class="accordion" id="testResponsesAccordion">
         {% for model, responses in test_responses.items %}
             <div class="accordion-item">
-                <h2 class="accordion-header" id="heading-{{ model }}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ model }}" aria-expanded="false" aria-controls="collapse-{{ model }}">
+                <h2 class="accordion-header" id="heading-{{ model|slugify }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse-{{ model|slugify }}" aria-expanded="false"
+                            aria-controls="collapse-{{ model|slugify }}">
                         Model: {{ model }}
                     </button>
                 </h2>
-                <div id="collapse-{{ model }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ model }}" data-bs-parent="#testResponsesAccordion">
+                <div id="collapse-{{ model|slugify }}" class="accordion-collapse collapse"
+                     aria-labelledby="heading-{{ model|slugify }}" data-bs-parent="#testResponsesAccordion">
                     <div class="accordion-body">
                         {% for response in responses %}
                             <h5>Response for {{ response.test.testcase_id }}</h5>
                             <p><strong>Duration:</strong> {{ response.duration }}s</p>
+                            <p><strong>Time:</strong> {{ response.timestamp }}</p>
 
                             <div class="mb-3">
-                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#content-{{ response.id }}" aria-expanded="false" aria-controls="content-{{ response.id }}">
+                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#content-{{ response.id }}" aria-expanded="false"
+                                        aria-controls="content-{{ response.id }}">
                                     Toggle Content
                                 </button>
                                 <div id="content-{{ response.id }}" class="collapse mt-2">
@@ -35,7 +41,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#check-result-{{ response.id }}" aria-expanded="false" aria-controls="check-result-{{ response.id }}">
+                                <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#check-result-{{ response.id }}" aria-expanded="false"
+                                        aria-controls="check-result-{{ response.id }}">
                                     Toggle Check Result
                                 </button>
                                 <div id="check-result-{{ response.id }}" class="collapse mt-2">

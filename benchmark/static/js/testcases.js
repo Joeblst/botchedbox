@@ -1,8 +1,8 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const reloadButton = document.getElementById('reload-button');
     const tableContainer = document.getElementById('testcases-table');
 
-    reloadButton.addEventListener('click', function() {
+    reloadButton.addEventListener('click', function () {
         fetch("/testcases/load/")
             .then(response => {
                 if (!response.ok) {
