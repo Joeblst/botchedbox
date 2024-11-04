@@ -1,0 +1,95 @@
+.response-container {
+  // Content wrapper
+  .content-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+
+  // Model header icon
+  .model-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Custom form styling
+  .custom-check {
+    .form-check-input {
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-top: 0.3rem;
+
+      &:checked {
+        background-color: #3498db;
+        border-color: #3498db;
+      }
+    }
+  }
+
+  // Score badge
+  #calculatedScore {
+    font-size: 1.25rem;
+    padding: 0.5rem 1rem;
+  }
+
+  // Form controls
+  .form-control {
+    &:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+  }
+
+  // Markdown content
+  .markdown-content {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    padding: 1rem;
+
+    pre {
+      margin: 0;
+      background: #1e1e1e;
+      border-radius: 4px;
+
+      code {
+        color: #e6e6e6;
+      }
+    }
+  }
+
+  // Pagination
+  .pagination {
+    .page-link {
+      padding: 0.75rem 1rem;
+      color: #3498db;
+
+      &:hover {
+        background-color: #f8f9fa;
+      }
+    }
+  }
+}

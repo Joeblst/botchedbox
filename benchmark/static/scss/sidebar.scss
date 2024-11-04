@@ -1,0 +1,104 @@
+// Sidebar styling
+.sidebar {
+  &-content {
+    background: linear-gradient(to bottom, #2c3e50, #1a252f);
+    height: 100%;
+
+    // Brand section
+    .brand-container {
+      padding: 1.5rem 1rem;
+
+      .brand-link {
+        display: inline-flex;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateY(-1px);
+        }
+
+        .brand-title {
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    hr {
+      margin: 0.5rem 1rem;
+      opacity: 0.1;
+    }
+
+    // Navigation
+    .nav {
+      padding: 0.5rem 0;
+
+      .nav-item {
+        padding: 0.25rem 1rem;
+
+        .nav-link {
+          border-radius: 6px;
+          padding: 0.75rem 1rem;
+          font-weight: 500;
+          letter-spacing: 0.3px;
+          transition: all 0.2s ease;
+          position: relative;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+          }
+
+          &.active {
+            background: #3498db;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+
+            &:hover {
+              transform: translateX(4px) translateY(-1px);
+            }
+          }
+
+          // Icon styling
+          i, svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            opacity: 0.8;
+          }
+        }
+      }
+    }
+
+    // Settings dropdown
+    .dropdown {
+      .btn-link {
+        opacity: 0.8;
+        font-weight: 500;
+        transition: all 0.2s ease;
+
+        &:hover {
+          opacity: 1;
+          background: rgba(255, 255, 255, 0.05);
+        }
+      }
+
+      .dropdown-menu {
+        margin-top: 0.5rem;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: #2c3e50;
+
+        .dropdown-item {
+          padding: 0.5rem 1rem;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,10 @@
+import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -13,7 +16,25 @@ executor = ThreadPoolExecutor()
 
 
 def index(request):
-    return render(request, 'benchmark/default.html')
+    benchmarks = Benchmark.objects.all().order_by('-timestamp')
+    finished_count = benchmarks.filter(state='FINISHED').count()
+    test_count = Test.objects.count()
+    latest_run = benchmarks.first().timestamp if benchmarks.exists() else None
+    running_count = benchmarks.filter(state='RUNNING').count()
+
+    context = {
+        'benchmarks': benchmarks,
+        'finished_count': finished_count,
+        'test_count': test_count,
+        'latest_run': latest_run,
+        'running_count': running_count
+    }
+    return render(request, 'benchmark/default.html', context)
+
+
+def get_benchmarks(request):
+    benchmarks = Benchmark.objects.all().order_by('-timestamp')
+    return render(request, 'benchmark/table.html', {'benchmarks': benchmarks})
 
 
 def load_testcases(request):
@@ -37,12 +58,6 @@ def start_benchmark(request):
     benchmark_id = uuid.uuid4().hex
     executor.submit(benchmark_service.run_benchmark, benchmark_id)
     return HttpResponse('Benchmark started')
-
-
-def get_benchmarks(request):
-    benchmarks = Benchmark.objects.all()
-    context = {'benchmarks': benchmarks}
-    return render(request, 'benchmark/table.html', context)
 
 
 def get_benchmark(request, benchmark_id):
@@ -75,8 +90,27 @@ def get_tests(request, benchmark_id):
 
 
 def get_test(request, test_id):
-    current_test = Test.objects.get(pk=test_id)
-    responses = Response.objects.filter(test=current_test).all()
+    current_test = get_object_or_404(Test, pk=test_id)
+    responses_list = Response.objects.filter(test=current_test).order_by('-timestamp')
+    paginator = Paginator(responses_list, 1)
+    page = request.GET.get('page')
+
+    try:
+        response = paginator.page(page)
+    except PageNotAnInteger:
+        response = paginator.page(1)
+    except EmptyPage:
+        response = paginator.page(paginator.num_pages)
+
+    testcase = get_object_or_404(Testcase, id=current_test.testcase_id)
+    is_manual = testcase.get_config().get('problem', {}).get('verify_method') == 'manual'
+
+    current_checks = {}
+    if response and response[0].check_result:
+        try:
+            current_checks = json.loads(response[0].check_result)
+        except json.JSONDecodeError:
+            current_checks = {}
 
     return render(
         request,
@@ -84,9 +118,61 @@ def get_test(request, test_id):
         {
             'benchmark_id': current_test.benchmark.benchmark_id,
             'testcase_id': current_test.testcase_id,
-            'test_responses': responses
+            'response': response[0] if response else None,
+            'page_obj': response,
+            'is_manual': is_manual,
+            'current_checks': current_checks
         }
     )
+
+
+def manual_validation(request, response_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    response = get_object_or_404(Response, id=response_id)
+
+    # Calculate score based on checkboxes (20 points each)
+    base_score = sum([
+        request.POST.get('valid') == 'true',
+        request.POST.get('executable') == 'true',
+        request.POST.get('available_function') == 'true',
+        request.POST.get('formatting') == 'true',
+        request.POST.get('knowledge') == 'true',
+    ]) * 20
+
+    # Get override score if provided
+    override_score = request.POST.get('score_override')
+    final_score = int(override_score) if override_score.strip() else base_score
+
+    validation_data = {
+        'valid': request.POST.get('valid') == 'true',
+        'executable': request.POST.get('executable') == 'true',
+        'available_function': request.POST.get('available_function') == 'true',
+        'formatting': request.POST.get('formatting') == 'true',
+        'knowledge': request.POST.get('knowledge') == 'true',
+        'base_score': base_score,
+        'override_score': override_score if override_score.strip() else None,
+        'final_score': final_score,
+        'comment': request.POST.get('comment', '').strip(),
+        'timestamp': datetime.now().isoformat()
+    }
+
+    # Save the validation data
+    response.check_result = json.dumps(validation_data)
+    response.valid = validation_data['valid']
+
+    # Update the test score
+    response.test.score = final_score
+    response.test.save()
+
+    response.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Validation saved successfully',
+        'score': final_score
+    })
 
 
 def recalculate_score(request, test_id: int):
@@ -109,3 +195,28 @@ def recalculate_score(request, test_id: int):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+def get_testcase_tests(request, testcase_id):
+    testcase = get_object_or_404(Testcase, id=testcase_id)
+    tests = Test.objects.filter(testcase_id=testcase_id).order_by('-timestamp')
+
+    # Calculate statistics for the testcase
+    total_tests = tests.count()
+    validated_tests = tests.filter(responses__valid=True).distinct().count()
+    pending_validation = tests.exclude(responses__valid=True).distinct().count()
+
+    # Calculate average score for validated tests
+    validated_tests_list = tests.filter(responses__valid=True, score__isnull=False)
+    avg_score = sum([test.score for test in
+                     validated_tests_list]) / validated_tests_list.count() if validated_tests_list.exists() else 0
+
+    context = {
+        'testcase': testcase,
+        'tests': tests,
+        'total_tests': total_tests,
+        'validated_tests': validated_tests,
+        'pending_validation': pending_validation,
+        'avg_score': avg_score,
+    }
+    return render(request, 'testcase/tests.html', context)

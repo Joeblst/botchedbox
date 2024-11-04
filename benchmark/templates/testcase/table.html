@@ -1,27 +1,66 @@
+{% load bootstrap_icons %}
+
 <div class="table-responsive">
-    <table class="table table-striped table-sm">
-        <thead>
-        <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Type</th>
-            <th scope="col">Description</th>
-            <th scope="col">Actions</th>
-        </tr>
+    <table class="table table-hover mb-0">
+        <thead class="table-light">
+            <tr>
+                <th scope="col" class="ps-4">ID</th>
+                <th scope="col">Type</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-end pe-4">Actions</th>
+            </tr>
         </thead>
         <tbody>
-        {% for testcase in testcase_infos %}
+        {% if testcase_infos %}
+            {% for testcase in testcase_infos %}
+                <tr class="testcase-row">
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <span class="text-primary fw-medium">{{ testcase.id }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge rounded-pill
+                            {% if testcase.type == 'CODE' %}bg-info
+                            {% elif testcase.type == 'MANUAL' %}bg-warning
+                            {% else %}bg-secondary{% endif %}">
+                            {{ testcase.type }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="description-cell">{{ testcase.description }}</div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'get_testcase_tests' testcase.id %}"
+                               class="btn btn-light btn-sm">
+                                {% bs_icon 'eye' size='1em' extra_classes='me-1' %}
+                                View Tests
+                            </a>
+                            <form action="{% url 'delete_testcase' testcase.id %}"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this test case?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    {% bs_icon 'trash' size='1em' extra_classes='me-1' %}
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        {% else %}
             <tr>
-                <td>{{ testcase.id }}</td>
-                <td>{{ testcase.type }}</td>
-                <td>{{ testcase.description }}</td>
-                <td>
-                    <form action="{% url 'delete_testcase' testcase.id %}" method="post" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
+                <td colspan="4" class="text-center py-4">
+                    <div class="text-muted">
+                        {% bs_icon 'info-circle' size='1.5em' extra_classes='mb-2' %}
+                        <p class="mb-0">No test cases available</p>
+                    </div>
                 </td>
             </tr>
-        {% endfor %}
+        {% endif %}
         </tbody>
     </table>
 </div>

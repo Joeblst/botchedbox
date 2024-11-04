@@ -1,23 +1,28 @@
 {% load bootstrap_icons %}
-<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark h-100">
-    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        {% bs_icon 'box' size='1.5em' extra_classes='me-2' %}
-        <span class="fs-4">Botchedbox</span>
-    </a>
+<div class="sidebar-content d-flex flex-column flex-shrink-0 text-white h-100">
+    <!-- Brand -->
+    <div class="brand-container text-center py-4">
+        <a href="/" class="brand-link d-inline-flex align-items-center text-white text-decoration-none">
+            {% bs_icon 'box' size='1.75em' extra_classes='text-info me-2' %}
+            <span class="brand-title fs-4">Botchedbox</span>
+        </a>
+    </div>
+
     <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-        <li>
-            <a href="/" class="nav-link text-white">
-                {% bs_icon 'clipboard-data' size='1em' extra_classes='me-2' %}
+
+    <!-- Navigation -->
+    <ul class="nav nav-pills flex-column flex-grow-1">
+        <li class="nav-item">
+            <a href="/" class="nav-link text-white {% if request.path == '/' %}active{% endif %}">
+                {% bs_icon 'clipboard-data' size='1.1em' extra_classes='me-2' %}
                 Dashboard
             </a>
         </li>
-        <li>
-            <a href="/testcases/" class="nav-link text-white">
-                {% bs_icon 'bag-check' size='1em' extra_classes='me-2' %}
+        <li class="nav-item">
+            <a href="/testcases/" class="nav-link text-white {% if '/testcases/' in request.path %}active{% endif %}">
+                {% bs_icon 'bag-check' size='1.1em' extra_classes='me-2' %}
                 Testcases
             </a>
         </li>
     </ul>
-    <hr>
 </div>

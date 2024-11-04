@@ -1,0 +1,135 @@
+// Benchmark page styles
+.benchmark-container {
+  // Stats cards
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+    }
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Table styles
+  .table {
+    th {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      vertical-align: middle;
+    }
+  }
+
+  // Status badges
+  .badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+    text-transform: lowercase;
+
+    &::first-letter {
+      text-transform: uppercase;
+    }
+
+    &.bg-primary {  // Running
+      background-color: #3498db !important;
+    }
+
+    &.bg-success {  // Finished
+      background-color: #2ecc71 !important;
+    }
+
+    &.bg-danger {   // Failed
+      background-color: #e74c3c !important;
+    }
+
+    &.bg-warning {  // Pending
+      background-color: #f1c40f !important;
+      color: #2c3e50;
+    }
+
+    &.bg-secondary { // Other states
+      background-color: #95a5a6 !important;
+    }
+  }
+
+  // Search input
+  .input-group {
+    .form-control {
+      &:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+      }
+    }
+
+    .input-group-text {
+      color: #6c757d;
+    }
+  }
+
+  // Action buttons
+  .btn-light {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+
+    &:hover {
+      background-color: #e9ecef;
+    }
+  }
+
+  .btn-danger {
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  // Hover effects
+  .benchmark-row {
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+
+      .view-btn {
+        opacity: 1;
+      }
+    }
+
+    .view-btn {
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+    }
+  }
+}
+
+// Custom scrollbar for table
+.table-responsive {
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}

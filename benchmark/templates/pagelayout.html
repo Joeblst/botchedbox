@@ -13,12 +13,12 @@
     <link rel="stylesheet" href="{% sass_src 'scss/import.scss' %}">
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row flex-nowrap">
+<div class="layout-wrapper">
+    <div class="main-container">
         <div id="sidebar" class="shadow col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
             {% include 'sidebar/default.html' %}
         </div>
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <main class="main-content">
             {% block content %}
             {% endblock %}
         </main>

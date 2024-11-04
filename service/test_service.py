@@ -19,6 +19,10 @@ def run_tests(benchmark: Benchmark, testcase: Testcase) -> None:
             run_test_script(testcase, test, llm_instance)
         elif config.get('verify_method') == 'table':
             run_test_table(testcase, test, llm_instance)
+        elif config.get('verify_method') == 'manual':
+            run_test_manual(testcase, test, llm_instance)
+        else:
+            test.set_state('NOT SUPPORTED')
 
 
 def _prepare_test(testcase: Testcase, test: Test) -> Tuple[Response, str, str]:
@@ -79,7 +83,7 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
             line += 1
             content, duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=1,
                                                                   file=row[0])
-            response.add_content(f'line + :{content}\n')
+            response.add_content(f'{line}: {content}\n')
             response.duration += duration
             test.score += (1 * score_weighting) if row[-1] == _interpret_bool_string(content) else 0
         except Exception as e:
@@ -90,6 +94,19 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
     response.set_valid(had_exception)
     test.set_state('FINISHED')
 
+
+def run_test_manual(testcase, test, llm_instance):
+    response, prompt, system = _prepare_test(testcase, test)
+    response.content, response.duration = llm_instance.execute_timed_prompt(
+        system=system,
+        prompt=prompt,
+        temperature=0
+    )
+    file_match = re.search(r"@@@START_FILE@@@(.*?)@@@END_FILE@@@", response.content, re.DOTALL)
+    if file_match:
+        response.response_file = file_match.group(1)
+    response.save()
+    test.set_state('WAITING FOR VALIDATION')
 
 def _interpret_bool_string(string: str) -> bool:
     true_strings = ['true', 'yes']

@@ -1,0 +1,97 @@
+.testcase-container {
+  // Table styles
+  .table {
+    th {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      vertical-align: middle;
+    }
+  }
+
+  // Description cell
+  .description-cell {
+    max-width: 600px; // Increased since we removed the view button
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Type badges
+  .badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+
+    &.bg-info {
+      background-color: #3498db !important;
+    }
+
+    &.bg-warning {
+      background-color: #f1c40f !important;
+      color: #2c3e50;
+    }
+
+    &.bg-secondary {
+      background-color: #95a5a6 !important;
+    }
+  }
+
+  // Row hover effect
+  .testcase-row {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  // Button styles
+  .btn-danger {
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  // Search input
+  .input-group {
+    .form-control {
+      min-width: 250px;
+
+      &:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+      }
+    }
+
+    .input-group-text {
+      color: #6c757d;
+    }
+  }
+}
+
+// Custom scrollbar
+.table-responsive {
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
