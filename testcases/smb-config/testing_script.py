@@ -12,6 +12,7 @@ test_count = 0
 def verify(testcase: Testcase, response: Response) -> int:
     """Verify SMB configuration and return a score."""
     global test_count
+    test_count += 1
     score = 0
     issues = []
 
@@ -42,8 +43,13 @@ def verify(testcase: Testcase, response: Response) -> int:
         check_score = check_func(config.global_options, issues)
         score += check_score
 
-    # Share-specific checks
+    new_shares = False
+    valid_shares = {'documents', 'financials', 'home_directories', 'applications'}
     for share in config.shares:
+        if share.name not in valid_shares:
+            issues.append(f"- {share.name} was additionally created")
+            new_shares = True
+            continue
         share_checks = [
             (check_share_security, "Share Security Settings"),
             (check_share_permissions, "Share Permissions"),
@@ -57,6 +63,9 @@ def verify(testcase: Testcase, response: Response) -> int:
             check_score = check_func(share, config, issues)
             score += check_score
 
+    if not new_shares:
+        score += 1
+
     if issues:
         response.check_result = "### Configuration Issues Found\n\n" + "\n".join(issues)
     else:
@@ -67,6 +76,8 @@ def verify(testcase: Testcase, response: Response) -> int:
 
     score = (score / test_count) * 100
     return math.floor(score)
+
+
 
 def check_encryption(global_options: Dict[str, str], issues: List[str]) -> int:
     """Check encryption settings."""
@@ -94,24 +105,40 @@ def check_encryption(global_options: Dict[str, str], issues: List[str]) -> int:
 
     return score
 
+
 def check_share_security(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Check security settings for individual shares."""
     global test_count
     test_count += 2
     score = 0
 
-    # Basic share security checks
-    security_checks = {
-        'guest ok': ('no', "Guest access should be disabled"),
-        'browseable': ('no', "Share should not be browseable"),
-    }
+    map_to_guest = samba_config.get_option_value('map to guest', share).lower()
+    if map_to_guest in ('never', 'Never'):
+        score += 1
+    else:
+        guest_checks = {
+            'guest ok': ('no', "Guest access should be disabled"),
+            'guest only': ('no', "Guest only access should be disabled"),
+            'map to guest': (('never', 'Never'), "Guest mapping must be disabled")
+        }
 
-    for option, (secure_value, message) in security_checks.items():
-        value = samba_config.get_option_value(option, share)
-        if value != secure_value:
-            issues.append(f"- Share [{share.name}]: {message}")
-        else:
-            score += 1
+        guest_score = 1
+        for option, (valid_values, message) in guest_checks.items():
+            value = samba_config.get_option_value(option, share)
+            if option == 'map to guest':
+                if value not in valid_values:
+                    issues.append(f"- Share [{share.name}]: {message} (current: {value if value else 'not set'})")
+                    guest_score = 0
+            elif not value or value.lower() not in [v.lower() for v in valid_values]:
+                issues.append(f"- Share [{share.name}]: {message} (current: {value if value else 'not set'})")
+                guest_score = 0
+        score += guest_score
+
+    value = samba_config.get_option_value('browseable', share)
+    if not value or value.lower() != 'no':
+        issues.append(f"- Share [{share.name}]: Share should not be browseable")
+    else:
+        score += 1
 
     return score
 
@@ -158,7 +185,6 @@ def check_share_access(share: SambaShare, samba_config: SambaConfig, issues: Lis
     else:
         score += 1
 
-    # Share-specific group validations
     if share.name == 'documents':
         score += check_documents_share_access(share, samba_config, issues)
     elif share.name == 'financials':
@@ -314,38 +340,39 @@ def check_applications_share_access(share: SambaShare, samba_config: SambaConfig
 def check_authentication(global_options: Dict[str, str], issues: List[str]) -> int:
     """Check authentication-related settings."""
     global test_count
-    test_count += 5
+    test_count += 3
     score = 0
 
-    auth_checks = {
-        'security': {
-            'values': ('user', 'ads'),
-            'message': "Security mode must be 'user' or 'ads'"
-        },
-        'map to guest': {
-            'values': ('never',),
-            'message': "Guest mapping must be set to 'never'"
-        },
-        'encrypt passwords': {
-            'values': ('yes',),
-            'message': "Password encryption must be enabled"
-        },
-        'guest ok': {
-            'values': ('no',),
-            'message': "Global guest access must be disabled"
+    map_to_guest = global_options.get('map to guest', '').lower()
+    if map_to_guest in ('never', 'Never'):
+        score += 1
+    else:
+        guest_checks = {
+            'map to guest': ('never', 'Never'),
+            'guest ok': ('no',)
         }
-    }
 
-    for option, check in auth_checks.items():
-        value = global_options.get(option, '').lower()
-        if not value or value not in check['values']:
-            issues.append(f"- {check['message']} (current: {value if value else 'not set'})")
-        else:
-            score += 1
+        guest_score = 1
+        for option, valid_values in guest_checks.items():
+            value = global_options.get(option, '')
+            if option == 'map to guest':
+                if not value or value not in valid_values:
+                    issues.append(f"- Guest mapping must be set to 'never' (current: {value if value else 'not set'})")
+                    guest_score = 0
+            elif not value or value.lower() not in valid_values:
+                issues.append(f"- Guest access must be disabled (current: {value if value else 'not set'})")
+                guest_score = 0
+        score += guest_score
 
-    # Check for password policies
-    if 'password level' not in global_options or int(global_options.get('password level', '0')) < 8:
-        issues.append("- Password complexity requirements not properly configured")
+    value = global_options.get('security', '').lower()
+    if not value or value not in ('user', 'ads'):
+        issues.append("- Security mode must be 'user' or 'ads'")
+    else:
+        score += 1
+
+    value = global_options.get('encrypt passwords', '').lower()
+    if not value or value != 'yes':
+        issues.append("- Password encryption must be enabled")
     else:
         score += 1
 
