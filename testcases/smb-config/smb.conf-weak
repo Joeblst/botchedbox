@@ -1,0 +1,144 @@
+# https://www.samba.org/samba/samba/docs/man/manpages/
+
+[global]
+    workgroup = WORKGROUP
+    server string = Enterprise File Server
+    netbios name = FILESERVER
+
+    # WEAKNESS: Mixed authentication modes can lead to authentication bypass
+    # - 'security = user' with 'map to guest = Bad Password' allows failed logins to get guest access
+    # - This creates a potential brute force to guest escalation path
+    security = user
+    map to guest = Bad Password
+
+    # WEAKNESS: Printer configuration exposes additional attack surface
+    # - Unnecessary service exposure if printing isn't required
+    # - CUPS integration can lead to command injection if misconfigured
+    load printers = yes
+    printing = cups
+    printcap name = cups
+
+    # WEAKNESS: Weak protocol security settings
+    # - 'server min protocol = SMB2' allows older, less secure protocol versions
+    # - 'signing = auto' makes downgrades possible - should be 'mandatory'
+    # - 'smb encrypt = auto' allows unencrypted connections
+    server min protocol = SMB2
+    server max protocol = SMB3
+    client signing = auto
+    server signing = auto
+    smb encrypt = auto
+
+    # WEAKNESS: Dangerous ACL configuration
+    # - Blanket inheritance can propagate unsafe permissions
+    # - inherit owner = yes can lead to privilege escalation
+    # - No ACL verification or sanitization
+    nt acl support = yes
+    inherit acls = yes
+    inherit permissions = yes
+    inherit owner = yes
+
+    # WEAKNESS: Insufficient logging configuration
+    # - Log level too low for security events
+    # - Small max log size enables log overflow attacks
+    # - No log rotation policy specified
+    log level = 1 auth:3 winbind:5
+    max log size = 50
+    debug timestamp = yes
+
+    # WEAKNESS: Symlink vulnerability chain
+    # - wide links = yes allows traversal outside share
+    # - follow symlinks without unix extensions enables race conditions
+    # - Can be used for unauthorized access to system files
+    wide links = yes
+    follow symlinks = yes
+    unix extensions = no
+
+    # WEAKNESS: Critical LDAP misconfiguration
+    # - No SSL/TLS for LDAP traffic (credentials in cleartext)
+    # - Admin DN exposed in config
+    passdb backend = ldapsam:ldap://ldap.internal
+    ldap ssl = no
+    ldap admin dn = "cn=admin,dc=example,dc=com"
+    ldap suffix = "dc=example,dc=com"
+
+[documents]
+    # WEAKNESS: Unsafe document share configuration
+    # - Shadow copy accessible through traversal
+    # - Recycle bin implementation vulnerable to race conditions
+    # - No quota on shadow copies or recycle bin
+    # - Dot files exposed, could leak metadata
+    path = /srv/samba/documents
+    browseable = yes
+    read only = no
+    valid users = @staff
+    write list = @staff
+    vfs objects = shadow_copy2 recycle
+    shadow:format = -%Y%m%d-%H%M%S
+    shadow:snapdir = /srv/samba/.snapshots
+    recycle:repository = /srv/samba/.recycle/%U
+    recycle:keeptree = yes
+    recycle:versions = yes
+    hide dot files = no
+
+[financials]
+    # WEAKNESS: Unsafe document share configuration
+    # - Shadow copy accessible through traversal
+    # - Recycle bin implementation vulnerable to race conditions
+    # - No quota on shadow copies or recycle bin
+    # - Dot files exposed, could leak metadata
+    # - Admin and Staff has access
+    path = /srv/samba/financials
+    browseable = yes
+    read only = no
+    valid users = @staff @finances
+    write list = @finances @admin
+    vfs objects = shadow_copy2 recycle
+    shadow:format = -%Y%m%d-%H%M%S
+    shadow:snapdir = /srv/samba/.snapshots
+    recycle:repository = /srv/samba/.recycle/%U
+    recycle:keeptree = yes
+    recycle:versions = yes
+    hide dot files = no
+
+[home_directories]
+    # WEAKNESS: Home directory security issues
+    # - Path contains user variable (%U) - potential traversal
+    # - Weak directory permissions (0750 allows group read)
+    # - streams_xattr exposes alternate data streams
+    # - DOS attributes stored but not properly secured
+    path = /home/users/%U
+    browseable = yes
+    read only = no
+    valid users = %S
+    create mask = 0640
+    directory mask = 0750
+    vfs objects = acl_xattr streams_xattr
+    store dos attributes = yes
+    map archive = yes
+
+[applications]
+    # WEAKNESS: Application directory vulnerabilities
+    # - Mixing admin and staff access
+    # - full_audit configuration leaks sensitive info
+    # - No rate limiting on audit logs
+    # - Audit failures only logged for connect
+    path = /opt/applications
+    browseable = yes
+    read only = yes
+    write list = @admins
+    admin users = @admins
+    valid users = @staff @admins
+    vfs objects = full_audit
+    full_audit:prefix = %u|%I|%m|%S
+    full_audit:success = mkdir rmdir read write
+    full_audit:failure = connect
+    full_audit:facility = local5
+    full_audit:priority = notice
+
+# ADDITIONAL SYSTEMIC WEAKNESSES:
+# 1. No share-level encryption requirements
+# 6. No password complexity requirements
+# 7. No account lockout policy
+# 8. Missing 'strict sync' settings
+# 9. No antivirus integration
+# 10. Missing 'strict locking' controls

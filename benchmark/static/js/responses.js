@@ -71,6 +71,27 @@ class ValidationForm {
         toast.addEventListener('hidden.bs.toast', () => toast.remove());
     }
 
+    getCSRFToken() {
+        // Try to get token from the form first
+        const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (tokenInput) return tokenInput.value;
+
+        // Fallback to cookie
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     async submitForm() {
         this.setLoading(true);
 
@@ -87,7 +108,7 @@ class ValidationForm {
             const response = await fetch(`/response/${this.responseId}/validate/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': this.getCSRFToken()
                 },
                 body: formData
             });
@@ -110,7 +131,100 @@ class ValidationForm {
     }
 }
 
+// Handle recalculate button
+class RecalculateScore {
+    constructor() {
+        this.button = document.getElementById('recalculateBtn');
+        if (!this.button) return;
+
+        this.initializeListener();
+    }
+
+    initializeListener() {
+        this.button.addEventListener('click', () => this.recalculate());
+    }
+
+    setLoading(isLoading) {
+        this.button.disabled = isLoading;
+        this.button.innerHTML = isLoading
+            ? '<span class="spinner-border spinner-border-sm me-2"></span>Recalculating...'
+            : '<i class="bi bi-arrow-repeat me-2"></i>Recalculate Score';
+    }
+
+    showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    getCSRFToken() {
+        // Try to get token from the form first
+        const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (tokenInput) return tokenInput.value;
+
+        // Fallback to cookie
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async recalculate() {
+        this.setLoading(true);
+
+        try {
+            // Extract test ID from the URL
+            const urlParts = window.location.pathname.split('/');
+            const testId = urlParts[urlParts.indexOf('tests') + 1];
+
+            const response = await fetch(`/tests/${testId}/recalculate/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCSRFToken()
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.showToast('Score recalculated successfully');
+                // Reload the page after successful recalculation
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                this.showToast(data.message || 'Error recalculating score', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Error recalculating score', 'danger');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     new ValidationForm();
+    new RecalculateScore();
 });
