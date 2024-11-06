@@ -1,0 +1,45 @@
+problem:
+  id: 'gitlab-permission'
+  type: "permission"
+  description: "A not least privilege GitLab permission dump"
+  verify_method: script #script, openvas, table
+  verify_script: testing_script.py
+  file: permissions
+
+llm:
+  default:
+    system: | 
+      You are a permission dump checker.
+      You have to follow the least privilege principle.
+      Your role is to output a raw permission table based on user specifications.
+      You will get a dump of the permissions of a system.
+      You have to format the output the same as the input.
+      Do not include any explanations, additional comments, or unnecessary formatting.
+      Do not provide additional information.
+      Do not provide what was fixed.
+      Do not provide extra symbols.
+      Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
+    prompt: | 
+      Below you find a dump of permissions of our GitLab Instance.
+      There are 5 user groups: Bots (bot), Developers (dev), Quality Assurance (qa), External users (ext) and datacenter employees (rz).
+      There are 9 groups: Webentwicklung, Appentwicklung, Integration, Infrastruktur with subgroups Netzwerk and Server, Reporting with subgroups Finanzen and Metriken.
+      The rz users are responsible for the infrastructure code.
+      rz001 and rz003 are responsible for the network.
+      rz002 and rz004 are responsible for the servers.
+      rz005 and rz001 are in identity/role management. They manage the users and groups in GitLab.
+      dev004 and dev003 are the overseeing developers. They have a overview of all the projects in the company.
+      dev001 is the lead developer of Webentwicklung. They are also responsible for the dev ops process.
+      dev002 and dev003 are the lead developers of Appentwicklung.
+      dev003 is the lead developer of Integration.
+      dev005 is the lead developer of Reporting.
+      dev006-dev010 are developers in Appentwicklung and Webentwicklung
+      dev011-dev013 are developers for Finanzen.
+      dev014-dev017 are developers for Metriken.
+      Every developer must see the interfaces of Integration.
+      qa001-qa005 test the code for bugs.
+      ext001 is a freelancer which develops code for Appentwicklung.
+      ext002 is an external reviewer and just gives feedback to web code.
+      The bot users are crucial to our dev ops process. They should be able to pull images and repositories
+  llama3.1:
+  mistral:
+  gpt-4o:
