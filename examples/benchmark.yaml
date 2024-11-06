@@ -1,7 +1,7 @@
 problem:
   id: 'test-id'
   type: "config" # config, firewall, phishing, ansible
-  description: "Short description of the üroblem"
+  description: "Short description of the problem"
   verify_method: script # script, table, manual
   verify_script: relative/path/to/testing/script
   file: relative/path/to/file_to_be_tested

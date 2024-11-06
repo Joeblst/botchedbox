@@ -9,7 +9,7 @@ problem:
 llm:
   default:
     system: | 
-      You are a permission dump checker.
+      You are a permission dump checker. You are given a csv and have to return a csv with semicolon sperator.
       You have to follow the least privilege principle.
       Your role is to output a raw permission table based on user specifications.
       You will get a dump of the permissions of a system.
@@ -40,6 +40,7 @@ llm:
       ext001 is a freelancer which develops code for Appentwicklung.
       ext002 is an external reviewer and just gives feedback to web code.
       The bot users are crucial to our dev ops process. They should be able to pull images and repositories
+      Keep the inheritance of GitLab in mind. No rights should be granted if not specified.
   llama3.1:
   mistral:
   gpt-4o:

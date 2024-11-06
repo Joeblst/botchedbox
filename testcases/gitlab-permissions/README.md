@@ -113,3 +113,15 @@
 | bot006   | Finanzen       | Developer  | Group | DevOps Bot - Pulls images and repositories |
 | bot007   | Metriken       | Developer  | Group | DevOps Bot - Pulls images and repositories |
 
+
+# Scenario
+- rza05 is new to the team they are missing the development Owner rights
+- dev001 introduced gitlab so they have owner rights to everything
+- dev002 managed App and Webentwicklung but since dev001 took over the project they had maintainer rights
+- dev002 had guest rights to other projects from a past internship
+- dev004 is still missing access rights as the role management is ad hoc
+- dev005 is missing access rights to Integration
+- dev006-dev010 had for ease of use maintainer access to their group and for Interface development access to Integration
+- dev014-dev017 have access to finanzen as the role management didnt know the difference between metriken and finanzen
+- All qa users have maintainer rights to debug the code themselves. this was not a good idea
+- Bots have maintainer rights as something didn't work. This was because of misconfiguration no because of rights
