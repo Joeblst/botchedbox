@@ -12,5 +12,6 @@ markdown
 django-markdownify
 django-compressor
 django-sass-processor
-django-sass-processor
 libsass
+anthropic
+crossplane

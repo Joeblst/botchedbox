@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Botchedbox</title>
     {% load bootstrap5 %}
     {% load static %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     {% load static %}
     {% load sass_tags %}
+    <link rel="shortcut icon" type="image/svg+xml" href="{% static 'images/box.svg' %}"/>
     <link rel="stylesheet" href="{% sass_src 'scss/import.scss' %}">
+    {% block head %}
+        <title>Botchedbox</title>
+    {% endblock %}
 </head>
 <body>
 <div class="layout-wrapper">

@@ -3,6 +3,10 @@
 {% load bootstrap_icons %}
 {% load test_filters %}
 
+{% block head %}
+        <title>Botchedbox | Test Results {{ testcase.id }}</title>
+{% endblock %}
+
 {% block content %}
 <div class="test-container">
     <!-- Header Section -->

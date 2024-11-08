@@ -1,13 +1,14 @@
 import os.path
 import time
-
 import yaml
+
+from anthropic import Anthropic
 from openai import OpenAI
 
 
 class LlmInstance:
 
-    def __init__(self, model: str, client: OpenAI):
+    def __init__(self, model: str, client: OpenAI | Anthropic):
         self.client = client
         self.model = model
 
@@ -20,6 +21,14 @@ class LlmInstance:
             prompt = '\n\n'.join([prompt, file_string])
 
         start = time.time()
+        if type(self.client) is Anthropic:
+            response = self._get_anthropic_message(system, prompt, temperature)
+        else:
+            response = self._get_openai_message(system, prompt, temperature)
+        end = time.time()
+        return response, end - start
+
+    def _get_openai_message(self, system: str, prompt: str, temperature: float = 0) -> str:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -28,8 +37,19 @@ class LlmInstance:
             ],
             temperature=temperature
         )
-        end = time.time()
-        return response.choices[0].message.content, end - start
+        return response.choices[0].message.content
+
+    def _get_anthropic_message(self, system: str, prompt: str, temperature: float = 0) -> str:
+        response = self.client.messages.create(
+            model=self.model,
+            system=system,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=temperature,
+            max_tokens = 4096
+        )
+        return response.content[0].text
 
 
 class LlmService:
@@ -41,15 +61,24 @@ class LlmService:
 
     def _register_instances(self):
         instances = {}
-        for key, value in self.config["credentials"].items():
-            question = LlmInstance(
-                key,
-                OpenAI(
-                    base_url=value["base_url"],
-                    api_key=value["api_key"],
+        for key, value in self.config.get('credentials', {}).items():
+            if value.get('api', 'openai') == 'anthropic':
+                instance = LlmInstance(
+                    key,
+                    Anthropic(
+                        base_url=value.get('base_url'),
+                        api_key=value.get('api_key'),
+                    )
                 )
-            )
-            instances[key] = question
+            else:
+                instance = LlmInstance(
+                    key,
+                    OpenAI(
+                        base_url=value.get('base_url'),
+                        api_key=value.get('api_key'),
+                    )
+                )
+            instances[key] = instance
         return instances
 
     def get_instance(self, model: str) -> LlmInstance:

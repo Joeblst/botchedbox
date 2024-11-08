@@ -3,7 +3,6 @@ import logging
 import os
 
 import yaml
-from xxsubtype import bench
 
 from benchmark.models import Testcase, Test, Response, Benchmark
 from service.test_service import calculate_score_script
