@@ -31,21 +31,38 @@
                         <div class="description-cell">{{ testcase.description }}</div>
                     </td>
                     <td class="text-end pe-4">
-                        <div class="d-flex justify-content-end gap-2">
+                        <div class="d-flex justify-content-end gap-3">
                             <a href="{% url 'get_testcase_tests' testcase.id %}"
-                               class="btn btn-light btn-sm">
-                                {% bs_icon 'eye' size='1em' extra_classes='me-1' %}
-                                View Tests
+                               class="btn btn-light btn-sm action-btn d-inline-flex align-items-center justify-content-center">
+                                {% bs_icon 'eye' size='1em' extra_classes='me-2' %}
+                                <span>View Tests</span>
                             </a>
                             <form action="{% url 'delete_testcase' testcase.id %}"
                                   method="post"
-                                  class="d-inline"
                                   onsubmit="return confirm('Are you sure you want to delete this test case?');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    {% bs_icon 'trash' size='1em' extra_classes='me-1' %}
-                                    Delete
+                                <button type="submit"
+                                        class="btn btn-danger btn-sm action-btn d-inline-flex align-items-center justify-content-center">
+                                    {% bs_icon 'trash' size='1em' extra_classes='me-2' %}
+                                    <span>Delete</span>
                                 </button>
+                            </form>
+                            <form action="{% url 'toggle_testcase' testcase.id %}"
+                                  method="post">
+                                {% csrf_token %}
+                                {% if testcase.disabled %}
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm action-btn d-inline-flex align-items-center justify-content-center">
+                                        {% bs_icon 'check-circle' size='1em' extra_classes='me-2' %}
+                                        <span>Enable</span>
+                                    </button>
+                                {% else %}
+                                    <button type="submit"
+                                            class="btn btn-warning btn-sm action-btn d-inline-flex align-items-center justify-content-center">
+                                        {% bs_icon 'stop-circle' size='1em' extra_classes='me-2' %}
+                                        <span>Disable</span>
+                                    </button>
+                                {% endif %}
                             </form>
                         </div>
                     </td>

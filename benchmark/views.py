@@ -54,6 +54,13 @@ def delete_testcase(request, testcase_id):
     return redirect(reverse('get_testcases'))
 
 
+def toggle_testcase(request, testcase_id):
+    testcase = get_object_or_404(Testcase, id=testcase_id)
+    testcase.disabled = not testcase.disabled
+    testcase.save()
+    return redirect(reverse('get_testcases'))
+
+
 def start_benchmark(request):
     benchmark_id = uuid.uuid4().hex
     executor.submit(benchmark_service.run_benchmark, benchmark_id)

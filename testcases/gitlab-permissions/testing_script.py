@@ -86,6 +86,7 @@ def verify(testcase: Testcase, response: Response) -> int:
     except Exception as e:
         response.set_check_result(f"# Permissions\n- CSV parsing failed: {str(e)}")
         return 0
+    response.set_valid(True)
 
     score = 0
     issues = []

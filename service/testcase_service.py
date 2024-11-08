@@ -25,6 +25,7 @@ def get_testcase_infos():
                 'id': testcase.id,
                 'type': config.get('problem', {}).get('type', 'Unknown'),
                 'description': config.get('problem', {}).get('description', 'No description available'),
+                'disabled': testcase.disabled,
             })
         except (ValueError, SyntaxError) as e:
             print(f"Error parsing config for Testcase {testcase.id}: {e}")
@@ -48,9 +49,10 @@ def load_testcases() -> None:
             continue
 
         testcase = Testcase(
-            id=config['problem']['id'],
+            id=config.get('problem', {}).get('id', 'Unknown'),
             path=os.path.join(testcases_path, testcase_dir),
-            config=config
+            config=config,
+            disabled=config.get('problem', False).get('disabled', False),
         )
         testcase.save()
 

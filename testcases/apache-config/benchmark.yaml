@@ -5,6 +5,7 @@ problem:
   verify_method: script #script, openvas, table
   verify_script: testing_script.py
   file: httpd.conf
+  disabled: true
 
 llm:
   default:
