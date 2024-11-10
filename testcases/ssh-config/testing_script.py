@@ -347,7 +347,7 @@ def check_match_blocks(match_block: MatchBlock) -> Tuple[int, List[str]]:
         },
         '172.17.0.0/16': {
             'root_login': 'prohibit-password',
-            'groups': {'admin', 'root'},
+            'groups': {'admin'},
             'forwarding': {'x11': 'no', 'tcp': 'yes', 'agent': 'no'},
             'password_auth': 'no'
         },

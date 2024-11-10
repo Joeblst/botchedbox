@@ -4,7 +4,7 @@ problem:
   description: "A misconfigured nginx config"
   verify_method: script #script, openvas, table
   verify_script: testing_script.py
-  file: httpd.conf
+  file: nginx-config
   disabled: true
 
 llm:
