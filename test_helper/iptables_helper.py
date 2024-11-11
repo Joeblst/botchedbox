@@ -1,61 +1,6 @@
-from dataclasses import dataclass
-from enum import Enum
 import ipaddress
 from typing import Optional, List
-
-
-class Action(Enum):
-    ACCEPT = "ACCEPT"
-    DROP = "DROP"
-    REJECT = "REJECT"
-
-
-class Chain(Enum):
-    INPUT = "INPUT"
-    OUTPUT = "OUTPUT"
-    FORWARD = "FORWARD"
-
-
-class State(Enum):
-    NEW = "NEW"
-    ESTABLISHED = "ESTABLISHED"
-    RELATED = "RELATED"
-    INVALID = "INVALID"
-    UNTRACKED = "UNTRACKED"
-
-
-@dataclass
-class Package:
-    interface: str
-    source: str
-    destination: str
-    protocol: str
-    port: int
-    state: State
-    expected: Action
-
-    def __str__(self) -> str:
-        return (f"Package({self.interface}, {self.source} -> {self.destination}, "
-                f"{self.protocol}:{self.port}, state={self.state}, expected={self.expected})")
-
-@dataclass
-class Policy:
-    chain: Chain
-    action: Action
-
-
-@dataclass
-class Rule:
-    chain: Chain
-    action: Action
-    protocol: Optional[str]
-    source: Optional[str]
-    destination: Optional[str]
-    source_ports: Optional[List[int]]
-    destination_ports: Optional[List[int]]
-    in_interface: Optional[str]
-    out_interface: Optional[str]
-    states: Optional[List[State]]
+from .firewall_helper import Chain, Policy, Package, Action, State, Rule
 
 
 class IPTablesSimulator:
@@ -85,14 +30,14 @@ class IPTablesSimulator:
                 parts = parts[1:]
 
             if line.startswith(':'):
-                chain = getattr(Chain, parts[0].strip(':'))
-                action = getattr(Action, parts[1].strip(':'))
+                chain = getattr(Chain, parts[0].strip(':').upper())
+                action = getattr(Action, parts[1].strip(':').upper())
                 self.policies[chain.value] = Policy(chain=chain, action=action)
                 continue
             chain_policy = _find_value(parts, ['-P', '--policy'])
             if chain_policy:
-                chain = getattr(Chain, chain_policy)
-                action = getattr(Action, parts[2])
+                chain = getattr(Chain, chain_policy.upper())
+                action = getattr(Action, parts[2].upper())
                 self.policies[chain.value] = Policy(chain=chain, action=action)
                 continue
 
@@ -115,10 +60,10 @@ class IPTablesSimulator:
                     source = f"!{parts[negate_i + 2]}"
 
             if chain:
-                chain = getattr(Chain, chain)
+                chain = getattr(Chain, chain.upper())
 
             if action:
-                action = getattr(Action, action)
+                action = getattr(Action, action.upper())
 
             if source_ports:
                 source_ports = source_ports.split(',')
@@ -127,7 +72,7 @@ class IPTablesSimulator:
 
             if states:
                 states = states.split(',')
-                states = [getattr(State, state) for state in states]
+                states = [getattr(State, state.upper()) for state in states]
 
             rule = Rule(
                 chain=chain,

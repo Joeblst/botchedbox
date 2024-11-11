@@ -4,8 +4,7 @@ from typing import List
 import math
 
 from benchmark.models import Testcase, Response
-from test_helper.iptables_helper import IPTablesSimulator
-from test_helper.firewall_helper import Package, State, Action
+from test_helper.nftables_helper import NFTablesSimulator, Package, State, Action
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 test_counts = 0
@@ -14,8 +13,7 @@ def verify(testcase: Testcase, response: Response) -> int:
     """Run all verification checks and return a score."""
     global test_counts
     issues = []
-
-    simulator = IPTablesSimulator()
+    simulator = NFTablesSimulator()
     simulator.parse_rules(response.response_file)
     packages = create_packages()
     score = 0

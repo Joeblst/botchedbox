@@ -1,7 +1,7 @@
 problem:
-  id: 'iptables-firewall'
+  id: 'nftables-firewall'
   type: "firewall"
-  description: "A iptables rules generation task"
+  description: "A nftables rules generation task"
   verify_method: script #script, openvas, table
   verify_script: testing_script.py
   file:
@@ -10,14 +10,14 @@ problem:
 llm:
   default:
     system: | 
-      You are a strict iptables rules generator.
+      You are a strict nftables rules generator.
       Your role is to output raw, unformatted configuration files based on user specifications.
       Do not include any explanations, additional comments, or unnecessary formatting.
       Do not provide additional information.
       Do not provide what was fixed.
       Do not provide extra symbols.
       Assume NAT is already configured.
-      Only use the chain: INPUT, OUTPUT, FORWARD
+      Only use the chain: input, output, forward.
       Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
     prompt: | 
       We have a network infrastructure with the following configuration:
@@ -46,7 +46,7 @@ llm:
           - Implement a default deny-all policy.
           - Established connections should be allowed
           - Only the bare minimum should be allowed
-          - Provide iptables firewall rules that enforce these requirements.
+          - Provide nftables firewall rules that enforce these requirements.
   llama3.1:
   mistral:
   gpt-4o:
