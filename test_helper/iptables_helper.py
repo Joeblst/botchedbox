@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import ipaddress
 from typing import Optional, List
 
 
@@ -23,21 +24,19 @@ class State(Enum):
     UNTRACKED = "UNTRACKED"
 
 
-class Expected(Enum):
-    DROP = "DROP"
-    ACCEPT = "ACCEPT"
-
-
 @dataclass
-class Packet:
+class Package:
     interface: str
     source: str
     destination: str
     protocol: str
     port: int
     state: State
-    expected: Expected
+    expected: Action
 
+    def __str__(self) -> str:
+        return (f"Package({self.interface}, {self.source} -> {self.destination}, "
+                f"{self.protocol}:{self.port}, state={self.state}, expected={self.expected})")
 
 @dataclass
 class Policy:
@@ -52,18 +51,19 @@ class Rule:
     protocol: Optional[str]
     source: Optional[str]
     destination: Optional[str]
-    port: Optional[List[int]]
+    source_ports: Optional[List[int]]
+    destination_ports: Optional[List[int]]
     in_interface: Optional[str]
     out_interface: Optional[str]
-    state: Optional[List[State]]
+    states: Optional[List[State]]
 
 
 class IPTablesSimulator:
     def __init__(self):
         self.policies = {
-            Chain.INPUT: Policy(chain=Chain.INPUT, action=Action.ACCEPT),
-            Chain.OUTPUT: Policy(chain=Chain.OUTPUT, action=Action.ACCEPT),
-            Chain.FORWARD: Policy(chain=Chain.FORWARD, action=Action.ACCEPT),
+            Chain.INPUT.value: Policy(chain=Chain.INPUT, action=Action.ACCEPT),
+            Chain.OUTPUT.value: Policy(chain=Chain.OUTPUT, action=Action.ACCEPT),
+            Chain.FORWARD.value: Policy(chain=Chain.FORWARD, action=Action.ACCEPT),
         }
         self.rules = []
 
@@ -85,9 +85,15 @@ class IPTablesSimulator:
                 parts = parts[1:]
 
             if line.startswith(':'):
-                chain = getattr(Chain, parts[0])
-                action = getattr(Action, parts[1])
-                self.policies[Chain.INPUT] = Policy(chain=chain, action=action)
+                chain = getattr(Chain, parts[0].strip(':'))
+                action = getattr(Action, parts[1].strip(':'))
+                self.policies[chain.value] = Policy(chain=chain, action=action)
+                continue
+            chain_policy = _find_value(parts, ['-P', '--policy'])
+            if chain_policy:
+                chain = getattr(Chain, chain_policy)
+                action = getattr(Action, parts[2])
+                self.policies[chain.value] = Policy(chain=chain, action=action)
                 continue
 
             chain = _find_value(parts, ['-A', '--append'])
@@ -95,7 +101,8 @@ class IPTablesSimulator:
             protocol = _find_value(parts, ['-p', '--protocol'])
             source = _find_value(parts, ['-s', '--source'])
             destination = _find_value(parts, ['-d', '--destination'])
-            ports = _find_value(parts, ['-p', '--port'])
+            source_ports = _find_value(parts, ['--source-port', '--sport', '--source-ports', '--sports'])
+            destination_ports = _find_value(parts, ['--destination-port', '--dport', '--destination-ports', '--dports'])
             in_interface = _find_value(parts, ['-i', '--interface'])
             out_interface = _find_value(parts, ['-o', '--interface'])
             states = _find_value(parts, ['--ctstate', '--state'])
@@ -113,8 +120,10 @@ class IPTablesSimulator:
             if action:
                 action = getattr(Action, action)
 
-            if ports:
-                ports = ports.split(',')
+            if source_ports:
+                source_ports = source_ports.split(',')
+            if destination_ports:
+                destination_ports = destination_ports.split(',')
 
             if states:
                 states = states.split(',')
@@ -126,17 +135,50 @@ class IPTablesSimulator:
                 protocol=protocol,
                 source=source,
                 destination=destination,
-                port=ports,
+                source_ports=source_ports,
+                destination_ports=destination_ports,
                 in_interface=in_interface,
                 out_interface=out_interface,
-                state=states,
+                states=states,
             )
             self.rules.append(rule)
         return self.rules
 
 
+    def evaluate_package(self, package: Package) -> bool:
+        if package.interface.startswith("lo"):
+            chain = Chain.INPUT
+        elif package.interface.startswith("eth") or package.interface.startswith("wan0"):
+            chain = Chain.FORWARD
+        else:
+            chain = Chain.OUTPUT
 
+        action = self.policies[chain.value].action
+        for rule in self.rules:
+            if rule.chain != chain:
+                continue
 
+            if rule.in_interface and package.interface != rule.in_interface:
+                continue
+
+            if not _check_ip_match(rule.source, package.source):
+                continue
+
+            if not _check_ip_match(rule.destination, package.destination):
+                continue
+
+            if rule.protocol and package.protocol != rule.protocol:
+                continue
+
+            if rule.destination_ports and package.port not in rule.destination_ports:
+                continue
+
+            if rule.states and package.state not in rule.states:
+                continue
+
+            action = rule.action
+            break
+        return package.expected == action
 
 
 
@@ -148,3 +190,37 @@ def _find_value(haystack: List[str], needles: List[str]) -> str | None:
                 return haystack[index + 1]
     except ValueError:
         return None
+
+
+def _is_valid_ip(ip_str: str) -> bool:
+    try:
+        ipaddress.ip_address(ip_str.lstrip('!'))
+        return True
+    except ValueError:
+        return False
+
+
+def _is_valid_network(network_str: str) -> bool:
+    try:
+        ipaddress.ip_network(network_str.lstrip('!'))
+        return True
+    except ValueError:
+        return False
+
+
+def _check_ip_match(rule_ip: str, package_ip: str) -> bool:
+    if rule_ip and rule_ip.startswith('!'):
+        if _is_valid_ip(rule_ip):
+            if ipaddress.ip_address(package_ip) == ipaddress.ip_address(rule_ip):
+                return False
+        elif _is_valid_network(rule_ip):
+            if ipaddress.ip_address(package_ip) in ipaddress.ip_network(rule_ip):
+                return False
+    elif rule_ip:
+        if _is_valid_ip(rule_ip):
+            if ipaddress.ip_address(package_ip) != ipaddress.ip_address(rule_ip):
+                return False
+        elif _is_valid_network(rule_ip):
+            if ipaddress.ip_address(package_ip) not in ipaddress.ip_network(rule_ip):
+                return False
+    return True

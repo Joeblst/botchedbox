@@ -39,8 +39,11 @@ llm:
           - The management Network can manage Server via RDP and SSH
       - DMZ Servers:
           - DMZ servers can communicate directly with the internet, subject to firewall rules.
+          - Except the Webservers. Those communicate with the loadbalancer and not the internet.
       - Firewall Policy:
           - Implement a default deny-all policy.
+          - Established connections should be allowed
+          - Only the bare minimum should be allowed
           - Provide iptables firewall rules that enforce these requirements.
   llama3.1:
   mistral:
