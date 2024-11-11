@@ -161,7 +161,7 @@ def create_packages() -> List[Package]:
             protocol='tcp',
             port=443,
             state=State.NEW,
-            expected=Action.DROP,
+            expected=Action.ACCEPT,
         ),
         Package(
             interface='eth0',
@@ -170,7 +170,7 @@ def create_packages() -> List[Package]:
             protocol='tcp',
             port=443,
             state=State.NEW,
-            expected=Action.DROP,
+            expected=Action.ACCEPT,
         ),
         Package(
             interface='eth0',

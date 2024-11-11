@@ -68,22 +68,30 @@ iptables -A OUTPUT -o lo -j ACCEPT
 
 ### DMZ
 ```bash
+# Allow management network to access all zones for administration
+iptables -A FORWARD -s 10.1.0.0/24 -d 172.16.20.0/24 -p tcp --dport 22 -j ACCEPT
+iptables -A FORWARD -s 10.1.0.0/24 -d 172.16.20.0/24 -p tcp --dport 3389 -j ACCEPT
+iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.0/24 -p tcp --dport 22 -j DROP
+iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.0/24 -p tcp --dport 3389 -j DROP
+
 # Allow internal clients to access internet via Application Proxy
-iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.50 -p tcp --dport 80 -j ACCEPT
-iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.50 -p tcp --dport 443 -j ACCEPT
-iptables -A FORWARD -s 10.0.0.0/16 ! -d 172.16.20.50 -o eth0 -j DROP
+iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.50 -p tcp -j ACCEPT
+iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.50 -p tcp -j ACCEPT
 iptables -A FORWARD -s 10.0.0.0/16 -d 172.16.20.0/24 -j ACCEPT
+iptables -A FORWARD -s 10.0.0.0/16 ! -d 172.16.20.50 -o eth0 -j DROP
+iptables -A FORWARD -s 172.16.20.0/24 -d 10.0.0.0/16 -o eth0 -j DROP
+
+# Web Servers (HTTP/HTTPS)
+iptables -A FORWARD -d 172.16.20.0/24 -i eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -d 172.16.20.100 -p tcp -m multiport --dports 80,443 -j ACCEPT
+iptables -A FORWARD -d 172.16.20.10 -s 172.16.20.100 -p tcp -m multiport --dports 80,443 -j ACCEPT
+iptables -A FORWARD -d 172.16.20.11 -s 172.16.20.100 -p tcp -m multiport --dports 80,443 -j ACCEPT
+iptables -A FORWARD -d 172.16.20.10 -j DROP
+iptables -A FORWARD -d 172.16.20.11 -j DROP
 
 # DMZ Server to Internet
 iptables -A FORWARD -s 172.16.20.0/24 -o eth0 -j ACCEPT
-iptables -A FORWARD -d 172.16.20.0/24 -i eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# Web Servers (HTTP/HTTPS)
-iptables -A FORWARD -d 172.16.20.10 -p tcp -m multiport --dports 80,443 -j ACCEPT
-iptables -A FORWARD -d 172.16.20.11 -p tcp -m multiport --dports 80,443 -j ACCEPT
-
-# Load Balancer VIP
-iptables -A FORWARD -d 172.16.20.100 -p tcp -m multiport --dports 80,443 -j ACCEPT
 
 # Mail Server (SMTP, IMAP, IMAPS)
 iptables -A FORWARD -d 172.16.20.20 -p tcp -m multiport --dports 25,143,993 -j ACCEPT
@@ -94,10 +102,6 @@ iptables -A FORWARD -d 172.16.20.30 -p tcp --dport 53 -j ACCEPT
 
 # Application Proxy
 iptables -A FORWARD -d 172.16.20.50 -p tcp --dport 3128 -j ACCEPT
-
-# Allow management network to access all zones for administration
-iptables -A INPUT -s 10.1.0.0/24 -d 172.16.20.0/24 -p tcp --dport 22 -j ACCEPT
-iptables -A INPUT -s 10.1.0.0/24 -d 172.16.20.0/24 -p tcp --dport 3389 -j ACCEPT
 ```
 
 ### Logging

@@ -66,9 +66,9 @@ class IPTablesSimulator:
                 action = getattr(Action, action.upper())
 
             if source_ports:
-                source_ports = source_ports.split(',')
+                source_ports = [int(source_port) for source_port in source_ports.split(',')]
             if destination_ports:
-                destination_ports = destination_ports.split(',')
+                destination_ports = [int(destination_port) for destination_port in destination_ports.split(',')]
 
             if states:
                 states = states.split(',')
