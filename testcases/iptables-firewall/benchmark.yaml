@@ -38,7 +38,8 @@ llm:
           - Clients in the internal network (10.0.0.0/16) can access the internet only via the application proxy (172.16.20.50).
           - The application proxy does not provide any services other than proxying internet access.
           - Internal clients can still access services in the DMZ directly.
-          - The management Network can manage Server via RDP and SSH
+          - The DMZ can't access the internal clients.
+          - Only the management Network can manage Server via RDP and SSH
       - DMZ Servers:
           - DMZ servers can communicate directly with the internet, subject to firewall rules.
           - Except the Webservers. Those communicate with the loadbalancer and not the internet.
