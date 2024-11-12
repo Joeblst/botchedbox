@@ -16,8 +16,10 @@ llm:
       Do not provide additional information.
       Do not provide what was fixed.
       Do not provide extra symbols.
+      Make the rules as strict as possible.
       Assume NAT is already configured.
-      Only use the chain: INPUT, OUTPUT, FORWARD
+      Only use the chain: INPUT, OUTPUT, FORWARD.
+      Only use IPv4.
       Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
     prompt: | 
       We have a network infrastructure with the following configuration:
@@ -39,14 +41,15 @@ llm:
           - The application proxy does not provide any services other than proxying internet access.
           - Internal clients can still access services in the DMZ directly.
           - The DMZ can't access the internal clients.
-          - Only the management Network can manage Server via RDP and SSH
+          - Only the management Network can manage Server via RDP and SSH.
       - DMZ Servers:
           - DMZ servers can communicate directly with the internet, subject to firewall rules.
           - Except the Webservers. Those communicate with the loadbalancer and not the internet.
       - Firewall Policy:
+          - The firewall device itself must not be taken into account, only the traffic routed through the firewall.
           - Implement a default deny-all policy.
           - Established connections should be allowed
-          - Only the bare minimum should be allowed
+          - Only the bare minimum should be allowed.
           - Provide iptables firewall rules that enforce these requirements.
   llama3.1:
   mistral:

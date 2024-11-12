@@ -1,6 +1,6 @@
-import ipaddress
+import re
 from typing import Optional, List, Dict
-from firewall_helper import Chain, Policy, Package, Action, State, Rule
+from .firewall_helper import Chain, Policy, Package, Action, State, Rule, Protocol, check_ip_match
 
 
 class NFTablesSimulator:
@@ -24,7 +24,6 @@ class NFTablesSimulator:
 
             parts = [part.strip() for part in line.split()]
 
-            # Handle table and chain declaration
             if line.startswith('table'):
                 if 'filter' not in line:
                     continue
@@ -32,36 +31,36 @@ class NFTablesSimulator:
                 chain_name = parts[1].upper()
                 if chain_name in Chain.__members__:
                     current_chain = getattr(Chain, chain_name)
-                    # Check for policy in chain declaration
-                    if 'policy' in line:
-                        policy_index = parts.index('policy')
-                        action = getattr(Action, parts[policy_index + 1].upper())
-                        self.policies[current_chain.value] = Policy(chain=current_chain, action=action)
+                continue
+
+            if 'policy' in line:
+                policy_index = parts.index('policy')
+                action = getattr(Action, parts[policy_index + 1].upper().rstrip(';'))
+                self.policies[current_chain.value] = Policy(chain=current_chain, action=action)
                 continue
 
             if not any(keyword in line for keyword in ['accept', 'drop', 'reject']):
                 continue
+            source = _find_ips(line, 'saddr')
+            destination = _find_ips(line, 'daddr')
+            in_interface = _find_value(parts, ['iifname', 'iif'])
+            out_interface = _find_value(parts, ['oifname', 'oif'])
 
-            # Parse rule components
-            protocol = _find_value(parts, ['meta l4proto'])
-            source = _find_value(parts, ['ip saddr'])
-            destination = _find_value(parts, ['ip daddr'])
-            in_interface = _find_value(parts, ['iifname'])
-            out_interface = _find_value(parts, ['oifname'])
-
-            # Parse ports
             source_ports = _find_ports(line, 'sport')
             destination_ports = _find_ports(line, 'dport')
 
-            # Parse states
             states = _find_states(line)
 
-            # Determine action
             action = None
             for act in Action:
                 if act.value in line:
                     action = act
                     break
+
+            protocol = None
+            for proto in Protocol:
+                if proto.value in line:
+                    protocol = proto
 
             if current_chain and action:
                 rule = Rule(
@@ -96,10 +95,10 @@ class NFTablesSimulator:
             if rule.in_interface and package.interface != rule.in_interface:
                 continue
 
-            if not _check_ip_match(rule.source, package.source):
+            if not check_ip_match(rule.source, package.source):
                 continue
 
-            if not _check_ip_match(rule.destination, package.destination):
+            if not check_ip_match(rule.destination, package.destination):
                 continue
 
             if rule.protocol and package.protocol != rule.protocol:
@@ -118,54 +117,96 @@ class NFTablesSimulator:
 
 def _find_value(parts: List[str], keywords: List[str]) -> Optional[str]:
     """Find a value in parts list after any of the keywords."""
-    for i, part in enumerate(parts):
-        if part in keywords and i + 1 < len(parts):
-            return parts[i + 1]
+    for index, part in enumerate(parts):
+        if part in keywords and index + 1 < len(parts):
+            return parts[index + 1].strip('"')
     return None
+
+
+def _find_ips(line: str, option: str) -> Optional[List[str]]:
+    if not option in line:
+        return None
+
+    parts = [part.strip() for part in line.split()]
+    ips = []
+
+    for index, part in enumerate(parts):
+        negate = False
+        if option not in part:
+            continue
+        current_part = None
+        i = index + 1
+        if i < len(parts):
+            current_part = parts[i]
+        if current_part and current_part == '!=':
+            negate = True
+            current_part = parts[i := i + 1]
+        if current_part and not current_part.startswith('{'):
+            ips.append("!" + current_part if negate else current_part)
+            continue
+        if current_part and current_part.startswith('{'):
+            if len(current_part) == 1:
+                current_part = parts[i := i + 1]
+                while not current_part.endswith('}'):
+                    if current_part.endswith(','):
+                        ips.append(current_part.rstrip(','))
+                    else:
+                        ip_list = current_part.split(',')
+                        for ip in ip_list:
+                            ips.append(ip)
+                    current_part = parts[i := i + 1]
+            else:
+                ip_list = current_part.strip('{}').split(',')
+                ips.extend([ip.strip() for ip in ip_list if ip])
+    return ips if ips else None
+
+
 
 def _find_ports(line: str, port_type: str) -> Optional[List[int]]:
     """Parse ports from a rule line."""
     if port_type not in line:
         return None
 
-    parts = line.split()
-    for i, part in enumerate(parts):
-        if port_type in part and i + 1 < len(parts):
-            ports_str = parts[i + 1]
-            if '{' in ports_str:  # Handle port ranges/sets
-                ports_str = ports_str.strip('{}')
-                return [int(p) for p in ports_str.split(',')]
-            return [int(ports_str)]
-    return None
+    pattern = fr'{port_type}\s*({{\s*[\d\s,\-]+\s*}}|\d+)'
+    match = re.search(pattern, line)
+
+    if not match:
+        return None
+
+    port_str = match.group(1)
+
+    if '{' in port_str:
+        port_str = port_str.strip('{}')
+        port_parts = [p.strip() for p in port_str.split(',')]
+
+        ports = []
+        for part in port_parts:
+            if '-' in part:
+                start, end = map(int, part.split('-'))
+                ports.extend(range(start, end + 1))
+            else:
+                ports.append(int(part))
+        return sorted(ports)
+
+    return [int(port_str)]
+
 
 def _find_states(line: str) -> Optional[List[State]]:
+    """Parse connection states from a rule line."""
     if 'ct state' not in line:
         return None
 
-    parts = line.split()
-    state_idx = parts.index('state')
-    if state_idx + 1 < len(parts):
-        states_str = parts[state_idx + 1].strip('{}')
-        return [getattr(State, state.upper()) for state in states_str.split(',')]
-    return None
+    pattern = r'state\s*({[\w\s,\-]+}|\w+)'
+    match = re.search(pattern, line)
 
-def _check_ip_match(rule_ip: Optional[str], package_ip: str) -> bool:
-    if not rule_ip:
-        return True
+    if not match:
+        return None
 
-    negated = rule_ip.startswith('!')
-    ip_str = rule_ip.lstrip('!')
+    state_str = match.group(1)
 
-    try:
-        if '/' in ip_str:  # Network
-            network = ipaddress.ip_network(ip_str)
-            package_addr = ipaddress.ip_address(package_ip)
-            match = package_addr in network
-        else:  # Single IP
-            rule_addr = ipaddress.ip_address(ip_str)
-            package_addr = ipaddress.ip_address(package_ip)
-            match = rule_addr == package_addr
+    if '{' in state_str:
+        state_str = state_str.strip('{}')
+        state_parts = [s.strip() for s in state_str.split(',')]
+        return [getattr(State, state.upper()) for state in state_parts]
 
-        return not match if negated else match
-    except ValueError:
-        return False
+    return [getattr(State, state_str.upper())]
