@@ -25,6 +25,7 @@ def verify(testcase: Testcase, response: Response) -> int:
             issues.append("- " + str(e))
     if issues:
         response.check_result = "### Firewall Issues Found\n\n" + "\n".join(issues)
+    response.set_valid(True)
     score = (score / len(packages)) * 100
     return math.floor(score)
 

@@ -7,7 +7,7 @@
     {% load static %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
-    {% load static %}
+    {% load bootstrap_icons %}
     {% load sass_tags %}
     <link rel="shortcut icon" type="image/svg+xml" href="{% static 'images/box.svg' %}"/>
     <link rel="stylesheet" href="{% sass_src 'scss/import.scss' %}">
@@ -16,19 +16,21 @@
     {% endblock %}
 </head>
 <body>
-<div class="layout-wrapper">
-    <div class="main-container">
-        <div id="sidebar" class="shadow col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
-            {% include 'sidebar/default.html' %}
+    <div class="layout-wrapper">
+        <div class="main-container">
+            <aside id="sidebar">
+                {% include 'sidebar/default.html' %}
+            </aside>
+            <main class="main-content">
+                {% block content %}
+                {% endblock %}
+            </main>
         </div>
-        <main class="main-content">
-            {% block content %}
-            {% endblock %}
-        </main>
+
+        {% include 'footer/default.html' %}
     </div>
-</div>
-{% include 'footer/default.html' %}
-{% block scripts %}
-{% endblock %}
+
+    {% block scripts %}
+    {% endblock %}
 </body>
 </html>

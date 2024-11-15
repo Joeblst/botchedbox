@@ -7,16 +7,21 @@ class ValidationForm {
         this.saveButton = document.getElementById('saveValidation');
         this.scoreDisplay = document.getElementById('calculatedScore');
         this.checkboxes = document.querySelectorAll('.validation-check');
+        this.isManual = this.checkboxes.length > 0; // Check if it's manual validation
 
         this.initializeListeners();
-        this.updateScore();
+        if (this.isManual) {
+            this.updateScore();
+        }
     }
 
     initializeListeners() {
-        // Update score when checkboxes change
-        this.checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => this.updateScore());
-        });
+        // Update score when checkboxes change (manual only)
+        if (this.isManual) {
+            this.checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => this.updateScore());
+            });
+        }
 
         // Handle form submission
         this.form.addEventListener('submit', (e) => {
@@ -48,9 +53,10 @@ class ValidationForm {
 
     setLoading(isLoading) {
         this.saveButton.disabled = isLoading;
+        const saveText = this.isManual ? 'Save Validation' : 'Save Score Override';
         this.saveButton.innerHTML = isLoading
-            ? '<span class="spinner-border spinner-border-sm me-2"></span>Saving...'
-            : '<i class="bi bi-save me-2"></i>Save Validation';
+            ? `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`
+            : `<i class="bi bi-save me-2"></i>${saveText}`;
     }
 
     showToast(message, type = 'success') {
@@ -96,13 +102,26 @@ class ValidationForm {
         this.setLoading(true);
 
         const formData = new FormData();
-        formData.append('valid', document.getElementById('validCheck').checked);
-        formData.append('executable', document.getElementById('executableCheck').checked);
-        formData.append('available_function', document.getElementById('availableFunctionCheck').checked);
-        formData.append('formatting', document.getElementById('formattingCheck').checked);
-        formData.append('knowledge', document.getElementById('knowledgeCheck').checked);
-        formData.append('score_override', document.getElementById('scoreOverride').value);
-        formData.append('comment', document.getElementById('comment').value);
+
+        // Add manual validation data if it's a manual validation
+        if (this.isManual) {
+            formData.append('valid', document.getElementById('validCheck').checked);
+            formData.append('executable', document.getElementById('executableCheck').checked);
+            formData.append('available_function', document.getElementById('availableFunctionCheck').checked);
+            formData.append('formatting', document.getElementById('formattingCheck').checked);
+            formData.append('knowledge', document.getElementById('knowledgeCheck').checked);
+        }
+
+        // Add score override and comment for both types
+        const scoreOverride = document.getElementById('scoreOverride');
+        const comment = document.getElementById('comment');
+
+        if (scoreOverride) {
+            formData.append('score_override', scoreOverride.value);
+        }
+        if (comment) {
+            formData.append('comment', comment.value);
+        }
 
         try {
             const response = await fetch(`/response/${this.responseId}/validate/`, {
@@ -116,9 +135,9 @@ class ValidationForm {
             const data = await response.json();
 
             if (data.status === 'success') {
-                this.showToast('Validation saved successfully');
-                // Optionally reload after save
-                // setTimeout(() => location.reload(), 1500);
+                this.showToast(this.isManual ? 'Validation saved successfully' : 'Score override saved successfully');
+                // Reload after save to show updated scores
+                setTimeout(() => location.reload(), 1500);
             } else {
                 this.showToast(data.message || 'Error saving validation', 'danger');
             }

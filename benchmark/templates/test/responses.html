@@ -57,7 +57,7 @@
                 <div class="p-4">
                     <div class="row g-4">
                         <!-- Response Details -->
-                        <div class="col{% if is_manual %}-7{% endif %}">
+                        <div class="col-7">
                             <div class="response-contents d-flex flex-column gap-4">
                                 <!-- Response File -->
                                 <div>
@@ -109,19 +109,20 @@
                         </div>
 
                         <!-- Manual Validation Form -->
-                        {% if is_manual %}
-                            <div class="col-5">
-                                <div class="border rounded-3 shadow-sm">
-                                    <div class="bg-primary text-white px-4 py-3 rounded-top">
-                                        <div class="d-flex align-items-center">
-                                            {% bs_icon 'check2-circle' size='1.2em' extra_classes='me-2' %}
-                                            <h6 class="mb-0">Manual Validation</h6>
-                                        </div>
+                        <div class="col-5">
+                            <div class="border rounded-3 shadow-sm">
+                                <div class="bg-primary text-white px-4 py-3 rounded-top">
+                                    <div class="d-flex align-items-center">
+                                        {% bs_icon 'check2-circle' size='1.2em' extra_classes='me-2' %}
+                                        <h6 class="mb-0">Manual Validation</h6>
                                     </div>
-                                    <div class="p-4">
-                                        <!-- Inside the manual validation card -->
-                                        <form id="manualValidationForm" data-response-id="{{ response.id }}">
-                                            {% csrf_token %}
+                                </div>
+                                <div class="p-4">
+                                    <!-- Inside the manual validation card -->
+                                    <form id="manualValidationForm" data-response-id="{{ response.id }}">
+                                        {% csrf_token %}
+
+                                        {% if is_manual %}
                                             <div class="validation-checks mb-4">
                                                 <!-- Valid Response -->
                                                 <div class="mb-3">
@@ -131,8 +132,8 @@
                                                                {% if current_checks.valid %}checked{% endif %}>
                                                         <label class="form-check-label" for="validCheck">
                                                             <strong>Valid Response</strong>
-                                                            <small class="d-block text-muted">Response meets basic
-                                                                requirements</small>
+                                                            <small class="d-block text-muted">Response is valid for the
+                                                                Testcase</small>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -144,9 +145,9 @@
                                                                id="executableCheck"
                                                                {% if current_checks.executable %}checked{% endif %}>
                                                         <label class="form-check-label" for="executableCheck">
-                                                            <strong>Executable Code</strong>
-                                                            <small class="d-block text-muted">Code can be run without
-                                                                errors</small>
+                                                            <strong>Executable</strong>
+                                                            <small class="d-block text-muted">The response is executable
+                                                                without adjustments</small>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -159,8 +160,8 @@
                                                                {% if current_checks.available_function %}checked{% endif %}>
                                                         <label class="form-check-label" for="availableFunctionCheck">
                                                             <strong>Available Functions</strong>
-                                                            <small class="d-block text-muted">All required functions are
-                                                                present</small>
+                                                            <small class="d-block text-muted">The response only uses
+                                                                available function</small>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -173,8 +174,8 @@
                                                                {% if current_checks.formatting %}checked{% endif %}>
                                                         <label class="form-check-label" for="formattingCheck">
                                                             <strong>Proper Formatting</strong>
-                                                            <small class="d-block text-muted">Code follows style
-                                                                guidelines</small>
+                                                            <small class="d-block text-muted">The response is well
+                                                                formed</small>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -186,47 +187,52 @@
                                                                id="knowledgeCheck"
                                                                {% if current_checks.knowledge %}checked{% endif %}>
                                                         <label class="form-check-label" for="knowledgeCheck">
-                                                            <strong>Knowledge Application</strong>
-                                                            <small class="d-block text-muted">Shows understanding of
-                                                                concepts</small>
+                                                            <strong>Knowledge</strong>
+                                                            <small class="d-block text-muted">The response displays
+                                                                knowledge about the problem</small>
                                                         </label>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <!-- Score Section -->
-                                            <div class="score-section border-top pt-3 mb-3">
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <span class="fw-bold">Calculated Score:</span>
-                                                    <span id="calculatedScore" class="badge bg-secondary">0</span>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="scoreOverride" class="form-label">Score Override</label>
-                                                    <input type="number" class="form-control" id="scoreOverride"
-                                                           min="0" max="100"
-                                                           value="{{ current_checks.override_score|default:'' }}"
-                                                           placeholder="Enter manual score (0-100)">
-                                                </div>
+                                        {% endif %}
+                                        <!-- Score Section - Available for both manual and automated -->
+                                        <div class="score-section {% if is_manual %}border-top pt-3{% endif %} mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-bold">{% if is_manual %}Calculated Score{% else %}
+                                                    Current Score{% endif %}:</span>
+                                                <span id="calculatedScore" class="badge bg-secondary">
+                                                    {% if is_manual %}0{% else %}
+                                                        {{ response.test.score|default:"0" }}{% endif %}
+                                                </span>
                                             </div>
-
-                                            <!-- Comments -->
                                             <div class="mb-3">
-                                                <label for="comment" class="form-label">Comments</label>
-                                                <textarea class="form-control" id="comment" rows="3"
-                                                          placeholder="Add any relevant comments...">{{ current_checks.comment|default:'' }}</textarea>
+                                                <label for="scoreOverride" class="form-label">Score Override</label>
+                                                <input type="number" class="form-control" id="scoreOverride"
+                                                       min="0" max="100"
+                                                       value="{{ current_checks.override_score|default:'' }}"
+                                                       placeholder="Enter manual score (0-100)">
                                             </div>
+                                        </div>
 
-                                            <!-- Submit Button -->
-                                            <div class="d-grid">
-                                                <button type="submit" class="btn btn-primary" id="saveValidation">
-                                                    <i class="bi bi-save me-2"></i>Save Validation
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
+                                        <!-- Comments - Available for both -->
+                                        <div class="mb-3">
+                                            <label for="comment" class="form-label">Comments</label>
+                                            <textarea class="form-control" id="comment" rows="3"
+                                                      placeholder="Add any relevant comments...">{{ current_checks.comment|default:'' }}</textarea>
+                                        </div>
+
+                                        <!-- Submit Button -->
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary" id="saveValidation">
+                                                <i class="bi bi-save me-2"></i>Save {% if is_manual %}
+                                                Validation{% else %}Score Override{% endif %}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

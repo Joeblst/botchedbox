@@ -1,28 +1,60 @@
 {% load bootstrap_icons %}
-<div class="sidebar-content d-flex flex-column flex-shrink-0 text-white h-100">
+<div class="sidebar-content">
     <!-- Brand -->
-    <div class="brand-container text-center py-4">
-        <a href="/" class="brand-link d-inline-flex align-items-center text-white text-decoration-none">
-            {% bs_icon 'box' size='1.75em' extra_classes='text-info me-2' %}
-            <span class="brand-title fs-4">Botchedbox</span>
+    <div class="brand-container">
+        <a href="/" class="brand-link text-white text-decoration-none">
+            {% bs_icon 'box' size='1.5em' extra_classes='text-primary' %}
+            <span class="brand-title">Botchedbox</span>
         </a>
     </div>
 
-    <hr>
-
     <!-- Navigation -->
-    <ul class="nav nav-pills flex-column flex-grow-1">
-        <li class="nav-item">
-            <a href="/" class="nav-link text-white {% if request.path == '/' %}active{% endif %}">
-                {% bs_icon 'clipboard-data' size='1.1em' extra_classes='me-2' %}
-                Dashboard
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="/testcases/" class="nav-link text-white {% if '/testcases/' in request.path %}active{% endif %}">
-                {% bs_icon 'bag-check' size='1.1em' extra_classes='me-2' %}
-                Testcases
-            </a>
-        </li>
-    </ul>
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-header">
+                <h6 class="text-uppercase text-muted fw-semibold mb-3">Main</h6>
+            </div>
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item">
+                    <a href="/" class="nav-link text-white {% if request.path == '/' %}active{% endif %}">
+                        {% bs_icon 'speedometer2' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/testcases/" class="nav-link text-white {% if '/testcases/' in request.path %}active{% endif %}">
+                        {% bs_icon 'collection' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Testcases</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Evaluation Section -->
+        <div class="nav-section mt-4">
+            <div class="nav-section-header">
+                <h6 class="text-uppercase text-muted fw-semibold mb-3">Evaluation</h6>
+            </div>
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item">
+                    <a href="/problem-types" class="nav-link text-white {% if '/problem-types' in request.path %}active{% endif %}">
+                        {% bs_icon 'diagram-3' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Problem Types</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/llm" class="nav-link text-white {% if '/llm' in request.path %}active{% endif %}">
+                        {% bs_icon 'cpu' size='1.1em' extra_classes='nav-icon' %}
+                        <span>LLM Models</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/summary" class="nav-link text-white {% if '/summary' in request.path %}active{% endif %}">
+                        {% bs_icon 'graph-up' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Summary</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 </div>

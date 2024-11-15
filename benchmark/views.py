@@ -138,47 +138,55 @@ def manual_validation(request, response_id):
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
     response = get_object_or_404(Response, id=response_id)
+    testcase = get_object_or_404(Testcase, id=response.test.testcase_id)
+    is_manual = testcase.get_config().get('problem', {}).get('verify_method') == 'manual'
 
-    # Calculate score based on checkboxes (20 points each)
-    base_score = sum([
-        request.POST.get('valid') == 'true',
-        request.POST.get('executable') == 'true',
-        request.POST.get('available_function') == 'true',
-        request.POST.get('formatting') == 'true',
-        request.POST.get('knowledge') == 'true',
-    ]) * 20
+    if is_manual:
+        # Calculate base score for manual validation
+        base_score = sum([
+            request.POST.get('valid') == 'true',
+            request.POST.get('executable') == 'true',
+            request.POST.get('available_function') == 'true',
+            request.POST.get('formatting') == 'true',
+            request.POST.get('knowledge') == 'true',
+        ]) * 20
 
-    # Get override score if provided
+        validation_data = {
+            'valid': request.POST.get('valid') == 'true',
+            'executable': request.POST.get('executable') == 'true',
+            'available_function': request.POST.get('available_function') == 'true',
+            'formatting': request.POST.get('formatting') == 'true',
+            'knowledge': request.POST.get('knowledge') == 'true',
+            'base_score': base_score,
+        }
+    else:
+        # For automated validation, maintain existing validation data
+        try:
+            validation_data = json.loads(response.check_result) if response.check_result else {}
+        except json.JSONDecodeError:
+            validation_data = {}
+
+    # Handle score override and comments for both manual and automated
     override_score = request.POST.get('score_override')
-    final_score = int(override_score) if override_score.strip() else base_score
-
-    validation_data = {
-        'valid': request.POST.get('valid') == 'true',
-        'executable': request.POST.get('executable') == 'true',
-        'available_function': request.POST.get('available_function') == 'true',
-        'formatting': request.POST.get('formatting') == 'true',
-        'knowledge': request.POST.get('knowledge') == 'true',
-        'base_score': base_score,
+    validation_data.update({
         'override_score': override_score if override_score.strip() else None,
-        'final_score': final_score,
+        'final_score': int(override_score) if override_score.strip() else validation_data.get('base_score', 0),
         'comment': request.POST.get('comment', '').strip(),
         'timestamp': datetime.now().isoformat()
-    }
+    })
 
-    # Save the validation data
     response.check_result = json.dumps(validation_data)
-    response.valid = validation_data['valid']
+    if is_manual:
+        response.valid = validation_data['valid']
 
-    # Update the test score
-    response.test.score = final_score
+    response.test.score = validation_data['final_score']
     response.test.save()
-
     response.save()
 
     return JsonResponse({
         'status': 'success',
         'message': 'Validation saved successfully',
-        'score': final_score
+        'score': validation_data['final_score']
     })
 
 
