@@ -9,9 +9,9 @@ problem:
 
 llm:
   default:
-    system: | 
+    system: |
       System prompt
-    prompt: | 
+    prompt: |
       User prompt
   model1:
   model2:

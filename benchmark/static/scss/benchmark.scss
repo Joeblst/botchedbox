@@ -42,19 +42,19 @@
       text-transform: uppercase;
     }
 
-    &.bg-primary {  // Running
+    &.bg-primary { // Running
       background-color: #3498db !important;
     }
 
-    &.bg-success {  // Finished
+    &.bg-success { // Finished
       background-color: #2ecc71 !important;
     }
 
-    &.bg-danger {   // Failed
+    &.bg-danger { // Failed
       background-color: #e74c3c !important;
     }
 
-    &.bg-warning {  // Pending
+    &.bg-warning { // Pending
       background-color: #f1c40f !important;
       color: #2c3e50;
     }

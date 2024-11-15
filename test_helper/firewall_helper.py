@@ -70,7 +70,6 @@ def check_ip_match(rule_ips: Optional[List[str]], package_ip: str) -> bool:
     if not rule_ips:
         return True
 
-
     for rule_ip in rule_ips:
         negated = rule_ip.startswith('!')
         ip_str = rule_ip.lstrip('!')

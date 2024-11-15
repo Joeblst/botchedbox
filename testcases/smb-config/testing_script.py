@@ -78,7 +78,6 @@ def verify(testcase: Testcase, response: Response) -> int:
     return math.floor(score)
 
 
-
 def check_encryption(global_options: Dict[str, str], issues: List[str]) -> int:
     """Check encryption settings."""
     global test_count
@@ -88,7 +87,8 @@ def check_encryption(global_options: Dict[str, str], issues: List[str]) -> int:
     # SMB encryption check
     encryption = global_options.get('smb encrypt', '').lower()
     if encryption != 'required':
-        issues.append("- SMB encryption should be set to 'required' (current: " + (encryption if encryption else 'not set') + ")")
+        issues.append(
+            "- SMB encryption should be set to 'required' (current: " + (encryption if encryption else 'not set') + ")")
     else:
         score += 1
 
@@ -142,6 +142,7 @@ def check_share_security(share: SambaShare, samba_config: SambaConfig, issues: L
 
     return score
 
+
 def check_share_permissions(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Check file and directory permissions for shares."""
     global test_count
@@ -172,6 +173,7 @@ def check_share_permissions(share: SambaShare, samba_config: SambaConfig, issues
             score += 1
 
     return score
+
 
 def check_share_access(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Check access control settings and group permissions for shares."""
@@ -237,6 +239,7 @@ def check_documents_share_access(share: SambaShare, samba_config: SambaConfig, i
 
     return score
 
+
 def check_financials_share_access(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Validate financials share access permissions."""
     score = 0
@@ -269,6 +272,7 @@ def check_financials_share_access(share: SambaShare, samba_config: SambaConfig, 
 
     return score
 
+
 def check_home_directories_access(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Validate home directories access permissions."""
     score = 0
@@ -296,6 +300,7 @@ def check_home_directories_access(share: SambaShare, samba_config: SambaConfig, 
         score += 1
 
     return score
+
 
 def check_applications_share_access(share: SambaShare, samba_config: SambaConfig, issues: List[str]) -> int:
     """Validate applications share access permissions."""

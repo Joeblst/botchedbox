@@ -3,19 +3,20 @@
 <div class="table-responsive">
     <table class="table table-hover mb-0">
         <thead class="table-light">
-            <tr>
-                <th scope="col" class="ps-4">Testcase ID</th>
-                <th scope="col">Model</th>
-                <th scope="col">Score</th>
-                <th scope="col">Status</th>
-                <th scope="col">Validation</th>
-                <th scope="col">Last Updated</th>
-            </tr>
+        <tr>
+            <th scope="col" class="ps-4">Testcase ID</th>
+            <th scope="col">Model</th>
+            <th scope="col">Score</th>
+            <th scope="col">Status</th>
+            <th scope="col">Validation</th>
+            <th scope="col">Last Updated</th>
+        </tr>
         </thead>
         <tbody>
         {% if tests %}
             {% for test in tests %}
-                <tr class="test-row" onclick="window.location.href='{% url 'get_test' test.id %}'" style="cursor: pointer;">
+                <tr class="test-row" onclick="window.location.href='{% url 'get_test' test.id %}'"
+                    style="cursor: pointer;">
                     <td class="ps-4">
                         <div class="d-flex align-items-center">
                             <span class="text-primary fw-medium">{{ test.testcase_id }}</span>
@@ -39,7 +40,7 @@
                     </td>
                     <td>
                         {% with state=test.state|upper %}
-                        <span class="badge rounded-pill
+                            <span class="badge rounded-pill
                             {% if state == 'RUNNING' %}bg-primary
                             {% elif state == 'FINISHED' %}bg-success
                             {% elif state == 'FAILED' %}bg-danger

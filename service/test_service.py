@@ -108,6 +108,7 @@ def run_test_manual(testcase, test, llm_instance):
     response.save()
     test.set_state('WAITING FOR VALIDATION')
 
+
 def _interpret_bool_string(string: str) -> bool:
     true_strings = ['true', 'yes']
     false_strings = ['false', 'no']

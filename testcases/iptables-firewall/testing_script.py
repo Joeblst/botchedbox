@@ -10,6 +10,7 @@ from test_helper.firewall_helper import Package, State, Action, Protocol
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 test_counts = 0
 
+
 def verify(testcase: Testcase, response: Response) -> int:
     """Run all verification checks and return a score."""
     global test_counts

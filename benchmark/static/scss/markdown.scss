@@ -90,13 +90,33 @@
       border-radius: 0;
 
       // Style special syntax elements
-      .keyword { color: #569cd6; }
-      .function { color: #dcdcaa; }
-      .string { color: #ce9178; }
-      .number { color: #b5cea8; }
-      .comment { color: #6a9955; }
-      .class { color: #4ec9b0; }
-      .operator { color: #d4d4d4; }
+      .keyword {
+        color: #569cd6;
+      }
+
+      .function {
+        color: #dcdcaa;
+      }
+
+      .string {
+        color: #ce9178;
+      }
+
+      .number {
+        color: #b5cea8;
+      }
+
+      .comment {
+        color: #6a9955;
+      }
+
+      .class {
+        color: #4ec9b0;
+      }
+
+      .operator {
+        color: #d4d4d4;
+      }
     }
   }
 
@@ -122,7 +142,7 @@
     th, td {
       border: 1px solid #dfe2e5;
       padding: 0.5em 1em;
-      min-width: 100px;  // Prevent cells from becoming too narrow
+      min-width: 100px; // Prevent cells from becoming too narrow
     }
   }
 

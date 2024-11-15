@@ -5,6 +5,7 @@ from .firewall_helper import Chain, Policy, Package, Action, State, Rule, Protoc
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
+
 class IPTablesSimulator:
     def __init__(self):
         self.policies = {
@@ -50,7 +51,8 @@ class IPTablesSimulator:
                 source = _find_ips(line, ['-s', '--source'])
                 destination = _find_ips(line, ['-d', '--destination'])
                 source_ports = _find_value(parts, ['--source-port', '--sport', '--source-ports', '--sports'])
-                destination_ports = _find_value(parts, ['--destination-port', '--dport', '--destination-ports', '--dports'])
+                destination_ports = _find_value(parts,
+                                                ['--destination-port', '--dport', '--destination-ports', '--dports'])
                 in_interface = _find_value(parts, ['-i', '--interface'])
                 out_interface = _find_value(parts, ['-o', '--interface'])
                 states = _find_value(parts, ['--ctstate', '--state'])
@@ -97,7 +99,6 @@ class IPTablesSimulator:
                 logging.warning(str(e))
         return self.rules
 
-
     def evaluate_package(self, package: Package) -> bool:
         if package.interface.startswith("lo"):
             chain = Chain.INPUT
@@ -132,7 +133,6 @@ class IPTablesSimulator:
             action = rule.action
             break
         return package.expected == action
-
 
 
 def _find_value(haystack: List[str], needles: List[str]) -> str | None:

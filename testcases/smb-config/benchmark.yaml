@@ -8,7 +8,7 @@ problem:
 
 llm:
   default:
-    system: | 
+    system: |
       You are a secure configuration file generator.
       Your role is to output raw, unformatted configuration files based on user specifications.
       Do not include any explanations, additional comments, or unnecessary formatting.
@@ -16,7 +16,7 @@ llm:
       Do not provide what was fixed.
       Do not provide extra symbols.
       Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
-    prompt: | 
+    prompt: |
       Secure the following smb config with security best practices. It has to pass security benchmarks.
       Nobody should have access without authentication with an encrypted and complex password.
       Only admins should have access to applications.

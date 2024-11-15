@@ -4,267 +4,279 @@
 {% load bootstrap_icons %}
 
 {% block content %}
-<div class="response-container">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">Test Response</h2>
-            <p class="text-muted mb-0">Benchmark {{ benchmark_id }} - Test Case {{ response.test.testcase_id }}</p>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <div class="pagination-badge">
+    <div class="response-container">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">Test Response</h2>
+                <p class="text-muted mb-0">Benchmark {{ benchmark_id }} - Test Case {{ response.test.testcase_id }}</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="pagination-badge">
                 <span class="badge bg-secondary d-flex align-items-center">
                     {% bs_icon 'file-text' size='1em' extra_classes='me-2' %}
                     Response {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                 </span>
+                </div>
+                <button id="recalculateBtn" class="btn btn-primary d-flex align-items-center">
+                    {% bs_icon 'arrow-repeat' size='1em' extra_classes='me-2' %}
+                    Recalculate Score
+                </button>
             </div>
-            <button id="recalculateBtn" class="btn btn-primary d-flex align-items-center">
-                {% bs_icon 'arrow-repeat' size='1em' extra_classes='me-2' %}
-                Recalculate Score
-            </button>
         </div>
-    </div>
 
-    {% if response %}
-        <div class="border rounded-3 shadow-sm">
-            <!-- Response Header -->
-            <div class="bg-light border-bottom px-4 py-3">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="d-flex align-items-center">
-                            <div class="model-icon bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
-                                {% bs_icon 'cpu' size='1.2em' %}
-                            </div>
-                            <div>
-                                <h5 class="mb-1">{{ response.model }}</h5>
-                                <small class="text-muted">Model Response</small>
+        {% if response %}
+            <div class="border rounded-3 shadow-sm">
+                <!-- Response Header -->
+                <div class="bg-light border-bottom px-4 py-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex align-items-center">
+                                <div class="model-icon bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+                                    {% bs_icon 'cpu' size='1.2em' %}
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ response.model }}</h5>
+                                    <small class="text-muted">Model Response</small>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-auto text-end">
-                        <div class="mb-1">
+                        <div class="col-auto text-end">
+                            <div class="mb-1">
                             <span class="badge bg-info d-inline-flex align-items-center">
                                 {% bs_icon 'clock' size='0.85em' extra_classes='me-1' %}
                                 {{ response.duration }}s
                             </span>
+                            </div>
+                            <small class="text-muted">{{ response.timestamp|date:"M d, Y H:i" }}</small>
                         </div>
-                        <small class="text-muted">{{ response.timestamp|date:"M d, Y H:i" }}</small>
+                    </div>
+                </div>
+
+                <!-- Response Content -->
+                <div class="p-4">
+                    <div class="row g-4">
+                        <!-- Response Details -->
+                        <div class="col{% if is_manual %}-7{% endif %}">
+                            <div class="response-contents d-flex flex-column gap-4">
+                                <!-- Response File -->
+                                <div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <h6 class="fw-bold mb-0">Response File</h6>
+                                        <div class="ms-2 text-muted small">
+                                            <i class="bi bi-file-code me-1"></i>Generated Code
+                                        </div>
+                                    </div>
+                                    <div class="content-wrapper bg-light rounded">
+                                        <div class="markdown-content">
+                                            {{ response.get_markdown_response_file|markdownify }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Response Content -->
+                                <div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <h6 class="fw-bold mb-0">Response Content</h6>
+                                        <div class="ms-2 text-muted small">
+                                            <i class="bi bi-chat-text me-1"></i>Model Output
+                                        </div>
+                                    </div>
+                                    <div class="content-wrapper bg-light rounded">
+                                        <div class="markdown-content">
+                                            {{ response.get_markdown_content|markdownify }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Check Result (if not manual) -->
+                                {% if not is_manual %}
+                                    <div>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <h6 class="fw-bold mb-0">Check Result</h6>
+                                            <div class="ms-2 text-muted small">
+                                                <i class="bi bi-check-circle me-1"></i>Automated Validation
+                                            </div>
+                                        </div>
+                                        <div class="content-wrapper bg-light rounded">
+                                            <div class="markdown-content">
+                                                {{ response.check_result|markdownify }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Manual Validation Form -->
+                        {% if is_manual %}
+                            <div class="col-5">
+                                <div class="border rounded-3 shadow-sm">
+                                    <div class="bg-primary text-white px-4 py-3 rounded-top">
+                                        <div class="d-flex align-items-center">
+                                            {% bs_icon 'check2-circle' size='1.2em' extra_classes='me-2' %}
+                                            <h6 class="mb-0">Manual Validation</h6>
+                                        </div>
+                                    </div>
+                                    <div class="p-4">
+                                        <!-- Inside the manual validation card -->
+                                        <form id="manualValidationForm" data-response-id="{{ response.id }}">
+                                            {% csrf_token %}
+                                            <div class="validation-checks mb-4">
+                                                <!-- Valid Response -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="validCheck"
+                                                               {% if current_checks.valid %}checked{% endif %}>
+                                                        <label class="form-check-label" for="validCheck">
+                                                            <strong>Valid Response</strong>
+                                                            <small class="d-block text-muted">Response meets basic
+                                                                requirements</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Executable -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="executableCheck"
+                                                               {% if current_checks.executable %}checked{% endif %}>
+                                                        <label class="form-check-label" for="executableCheck">
+                                                            <strong>Executable Code</strong>
+                                                            <small class="d-block text-muted">Code can be run without
+                                                                errors</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Available Functions -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="availableFunctionCheck"
+                                                               {% if current_checks.available_function %}checked{% endif %}>
+                                                        <label class="form-check-label" for="availableFunctionCheck">
+                                                            <strong>Available Functions</strong>
+                                                            <small class="d-block text-muted">All required functions are
+                                                                present</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Formatting -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="formattingCheck"
+                                                               {% if current_checks.formatting %}checked{% endif %}>
+                                                        <label class="form-check-label" for="formattingCheck">
+                                                            <strong>Proper Formatting</strong>
+                                                            <small class="d-block text-muted">Code follows style
+                                                                guidelines</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Knowledge -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="knowledgeCheck"
+                                                               {% if current_checks.knowledge %}checked{% endif %}>
+                                                        <label class="form-check-label" for="knowledgeCheck">
+                                                            <strong>Knowledge Application</strong>
+                                                            <small class="d-block text-muted">Shows understanding of
+                                                                concepts</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Score Section -->
+                                            <div class="score-section border-top pt-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span class="fw-bold">Calculated Score:</span>
+                                                    <span id="calculatedScore" class="badge bg-secondary">0</span>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="scoreOverride" class="form-label">Score Override</label>
+                                                    <input type="number" class="form-control" id="scoreOverride"
+                                                           min="0" max="100"
+                                                           value="{{ current_checks.override_score|default:'' }}"
+                                                           placeholder="Enter manual score (0-100)">
+                                                </div>
+                                            </div>
+
+                                            <!-- Comments -->
+                                            <div class="mb-3">
+                                                <label for="comment" class="form-label">Comments</label>
+                                                <textarea class="form-control" id="comment" rows="3"
+                                                          placeholder="Add any relevant comments...">{{ current_checks.comment|default:'' }}</textarea>
+                                            </div>
+
+                                            <!-- Submit Button -->
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary" id="saveValidation">
+                                                    <i class="bi bi-save me-2"></i>Save Validation
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-
-            <!-- Response Content -->
-            <div class="p-4">
-                <div class="row g-4">
-                    <!-- Response Details -->
-                    <div class="col{% if is_manual %}-7{% endif %}">
-                        <div class="response-contents d-flex flex-column gap-4">
-                            <!-- Response File -->
-                            <div>
-                                <div class="d-flex align-items-center mb-3">
-                                    <h6 class="fw-bold mb-0">Response File</h6>
-                                    <div class="ms-2 text-muted small">
-                                        <i class="bi bi-file-code me-1"></i>Generated Code
-                                    </div>
-                                </div>
-                                <div class="content-wrapper bg-light rounded">
-                                    <div class="markdown-content">
-                                        {{ response.get_markdown_response_file|markdownify }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Response Content -->
-                            <div>
-                                <div class="d-flex align-items-center mb-3">
-                                    <h6 class="fw-bold mb-0">Response Content</h6>
-                                    <div class="ms-2 text-muted small">
-                                        <i class="bi bi-chat-text me-1"></i>Model Output
-                                    </div>
-                                </div>
-                                <div class="content-wrapper bg-light rounded">
-                                    <div class="markdown-content">
-                                        {{ response.get_markdown_content|markdownify }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Check Result (if not manual) -->
-                            {% if not is_manual %}
-                            <div>
-                                <div class="d-flex align-items-center mb-3">
-                                    <h6 class="fw-bold mb-0">Check Result</h6>
-                                    <div class="ms-2 text-muted small">
-                                        <i class="bi bi-check-circle me-1"></i>Automated Validation
-                                    </div>
-                                </div>
-                                <div class="content-wrapper bg-light rounded">
-                                    <div class="markdown-content">
-                                        {{ response.check_result|markdownify }}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Manual Validation Form -->
-                    {% if is_manual %}
-                    <div class="col-5">
-                        <div class="border rounded-3 shadow-sm">
-                            <div class="bg-primary text-white px-4 py-3 rounded-top">
-                                <div class="d-flex align-items-center">
-                                    {% bs_icon 'check2-circle' size='1.2em' extra_classes='me-2' %}
-                                    <h6 class="mb-0">Manual Validation</h6>
-                                </div>
-                            </div>
-                            <div class="p-4">
-<!-- Inside the manual validation card -->
-<form id="manualValidationForm" data-response-id="{{ response.id }}">
-    {% csrf_token %}
-    <div class="validation-checks mb-4">
-        <!-- Valid Response -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input validation-check" type="checkbox" id="validCheck"
-                       {% if current_checks.valid %}checked{% endif %}>
-                <label class="form-check-label" for="validCheck">
-                    <strong>Valid Response</strong>
-                    <small class="d-block text-muted">Response meets basic requirements</small>
-                </label>
+        {% else %}
+            <div class="alert alert-info d-flex align-items-center">
+                {% bs_icon 'info-circle' size='1.2em' extra_classes='me-2' %}
+                <div>No responses available for this test.</div>
             </div>
-        </div>
+        {% endif %}
 
-        <!-- Executable -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input validation-check" type="checkbox" id="executableCheck"
-                       {% if current_checks.executable %}checked{% endif %}>
-                <label class="form-check-label" for="executableCheck">
-                    <strong>Executable Code</strong>
-                    <small class="d-block text-muted">Code can be run without errors</small>
-                </label>
-            </div>
-        </div>
-
-        <!-- Available Functions -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input validation-check" type="checkbox" id="availableFunctionCheck"
-                       {% if current_checks.available_function %}checked{% endif %}>
-                <label class="form-check-label" for="availableFunctionCheck">
-                    <strong>Available Functions</strong>
-                    <small class="d-block text-muted">All required functions are present</small>
-                </label>
-            </div>
-        </div>
-
-        <!-- Formatting -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input validation-check" type="checkbox" id="formattingCheck"
-                       {% if current_checks.formatting %}checked{% endif %}>
-                <label class="form-check-label" for="formattingCheck">
-                    <strong>Proper Formatting</strong>
-                    <small class="d-block text-muted">Code follows style guidelines</small>
-                </label>
-            </div>
-        </div>
-
-        <!-- Knowledge -->
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input validation-check" type="checkbox" id="knowledgeCheck"
-                       {% if current_checks.knowledge %}checked{% endif %}>
-                <label class="form-check-label" for="knowledgeCheck">
-                    <strong>Knowledge Application</strong>
-                    <small class="d-block text-muted">Shows understanding of concepts</small>
-                </label>
-            </div>
-        </div>
-    </div>
-
-    <!-- Score Section -->
-    <div class="score-section border-top pt-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold">Calculated Score:</span>
-            <span id="calculatedScore" class="badge bg-secondary">0</span>
-        </div>
-        <div class="mb-3">
-            <label for="scoreOverride" class="form-label">Score Override</label>
-            <input type="number" class="form-control" id="scoreOverride"
-                   min="0" max="100" value="{{ current_checks.override_score|default:'' }}"
-                   placeholder="Enter manual score (0-100)">
-        </div>
-    </div>
-
-    <!-- Comments -->
-    <div class="mb-3">
-        <label for="comment" class="form-label">Comments</label>
-        <textarea class="form-control" id="comment" rows="3"
-                  placeholder="Add any relevant comments...">{{ current_checks.comment|default:'' }}</textarea>
-    </div>
-
-    <!-- Submit Button -->
-    <div class="d-grid">
-        <button type="submit" class="btn btn-primary" id="saveValidation">
-            <i class="bi bi-save me-2"></i>Save Validation
-        </button>
-    </div>
-</form>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Response navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link d-flex align-items-center"
+                               href="?page={{ page_obj.previous_page_number }}">
+                                {% bs_icon 'chevron-left' size='1em' extra_classes='me-1' %}
+                                Previous Response
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                    <span class="page-link d-flex align-items-center">
+                        {% bs_icon 'chevron-left' size='1em' extra_classes='me-1' %}
+                        Previous Response
+                    </span>
+                        </li>
                     {% endif %}
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="alert alert-info d-flex align-items-center">
-            {% bs_icon 'info-circle' size='1.2em' extra_classes='me-2' %}
-            <div>No responses available for this test.</div>
-        </div>
-    {% endif %}
 
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <nav aria-label="Response navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link d-flex align-items-center" href="?page={{ page_obj.previous_page_number }}">
-                        {% bs_icon 'chevron-left' size='1em' extra_classes='me-1' %}
-                        Previous Response
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link d-flex align-items-center">
-                        {% bs_icon 'chevron-left' size='1em' extra_classes='me-1' %}
-                        Previous Response
-                    </span>
-                </li>
-            {% endif %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link d-flex align-items-center" href="?page={{ page_obj.next_page_number }}">
-                        Next Response
-                        {% bs_icon 'chevron-right' size='1em' extra_classes='ms-1' %}
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link d-flex align-items-center" href="?page={{ page_obj.next_page_number }}">
+                                Next Response
+                                {% bs_icon 'chevron-right' size='1em' extra_classes='ms-1' %}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
                     <span class="page-link d-flex align-items-center">
                         Next Response
                         {% bs_icon 'chevron-right' size='1em' extra_classes='ms-1' %}
                     </span>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-</div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
 {% endblock %}
 
 {% block scripts %}

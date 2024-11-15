@@ -1,13 +1,17 @@
 import os.path
+import re
 import time
-import yaml
 
+import yaml
 from anthropic import Anthropic
 from openai import OpenAI
 
+from app.settings import env
+
+env_matcher = re.compile(r'\$\{([^}^{]+)\}')
+
 
 class LlmInstance:
-
     def __init__(self, model: str, client: OpenAI | Anthropic):
         self.client = client
         self.model = model
@@ -21,7 +25,7 @@ class LlmInstance:
             prompt = '\n\n'.join([prompt, file_string])
 
         start = time.time()
-        if type(self.client) is Anthropic:
+        if isinstance(self.client, Anthropic):
             response = self._get_anthropic_message(system, prompt, temperature)
         else:
             response = self._get_openai_message(system, prompt, temperature)
@@ -47,16 +51,19 @@ class LlmInstance:
                 {"role": "user", "content": prompt}
             ],
             temperature=temperature,
-            max_tokens = 4096
+            max_tokens=4096
         )
         return response.content[0].text
 
 
 class LlmService:
-
     def __init__(self):
+        yaml.add_implicit_resolver("!env", env_matcher)
+        yaml.add_constructor("!env", _replace_env_vars)
+
         with open(os.path.join("config", "llm.yaml"), "r") as file:
             self.config = yaml.load(file, Loader=yaml.FullLoader)
+
         self.instances = self._register_instances()
 
     def _register_instances(self):
@@ -83,3 +90,10 @@ class LlmService:
 
     def get_instance(self, model: str) -> LlmInstance:
         return self.instances.get(model)
+
+
+def _replace_env_vars(loader, node):
+    value = node.value
+    match = env_matcher.match(value)
+    env_var = match.group()[2:-1]
+    return env(env_var)

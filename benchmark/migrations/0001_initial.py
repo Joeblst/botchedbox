@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -39,7 +38,8 @@ class Migration(migrations.Migration):
                 ('score', models.IntegerField(blank=True, default=0, null=True)),
                 ('state', models.CharField(max_length=100)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('benchmark', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='responses', to='benchmark.benchmark')),
+                ('benchmark', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='responses',
+                                                to='benchmark.benchmark')),
             ],
             options={
                 'unique_together': {('benchmark', 'testcase_id', 'model')},
@@ -56,7 +56,8 @@ class Migration(migrations.Migration):
                 ('valid', models.BooleanField(default=False)),
                 ('duration', models.IntegerField(default=0)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('test', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='responses', to='benchmark.test')),
+                ('test', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='responses',
+                                           to='benchmark.test')),
             ],
         ),
     ]

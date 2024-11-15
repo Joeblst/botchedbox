@@ -1,7 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Start benchmark button
     const startButton = document.getElementById('start-button');
-    startButton.addEventListener('click', function() {
+    startButton.addEventListener('click', function () {
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting...';
 
@@ -11,24 +11,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                throw new Error('Failed to start benchmark');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            this.disabled = false;
-            this.innerHTML = 'Start New Benchmark';
-            alert('Failed to start benchmark. Please try again.');
-        });
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    throw new Error('Failed to start benchmark');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.disabled = false;
+                this.innerHTML = 'Start New Benchmark';
+                alert('Failed to start benchmark. Please try again.');
+            });
     });
 
     // Search functionality
     const searchInput = document.getElementById('searchBenchmark');
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         const searchTerm = this.value.toLowerCase();
         const rows = document.querySelectorAll('.benchmark-row');
 
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Refresh button
     const refreshButton = document.getElementById('refreshTable');
-    refreshButton.addEventListener('click', function() {
+    refreshButton.addEventListener('click', function () {
         this.disabled = true;
         const originalContent = this.innerHTML;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Refreshing...';
@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 5000);
         }
     }
+
     autoRefresh();
 });
 

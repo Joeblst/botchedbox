@@ -1,7 +1,9 @@
 # IPtables
+
 ## Scenario
 
 We have a network infrastructure with the following configuration:
+
 - Network Zones:
     - Internet: Any
     - DMZ Network: 172.16.20.0/24
@@ -19,7 +21,8 @@ We have a network infrastructure with the following configuration:
 Requirements:
 
 - Internal Network Restrictions:
-    - Clients in the internal network (10.0.0.0/16) can access the internet only via the application proxy (172.16.20.50).
+    - Clients in the internal network (10.0.0.0/16) can access the internet only via the application proxy (
+      172.16.20.50).
     - The application proxy does not provide any services other than proxying internet access.
     - Internal clients can still access services in the DMZ directly.
     - The management Network can manage Server via RDP and SSH
@@ -32,25 +35,27 @@ Requirements:
     - Provide iptables firewall rules that enforce these requirements.
     - Include explanations for each rule.
 
-Generate the necessary iptables firewall rules along with detailed explanations for each rule to meet these requirements.
+Generate the necessary iptables firewall rules along with detailed explanations for each rule to meet these
+requirements.
 
 ## Firewall Setup
 
 - Network Zones:
-  - Internet: Any
-  - DMZ Network: 172.16.20.0/24
-  - Internal Network: 10.0.0.0/16
-  - Management Network: 10.1.0.0/24
+    - Internet: Any
+    - DMZ Network: 172.16.20.0/24
+    - Internal Network: 10.0.0.0/16
+    - Management Network: 10.1.0.0/24
 
 - DMZ Servers:
-  - Web Server 1: 172.16.20.10
-  - Web Server 2: 172.16.20.11
-  - Mail Server: 172.16.20.20
-  - DNS Server: 172.16.20.30
-  - Load Balancer VIP: 172.16.20.100
-  - Application Proxy: 172.16.20.50
+    - Web Server 1: 172.16.20.10
+    - Web Server 2: 172.16.20.11
+    - Mail Server: 172.16.20.20
+    - DNS Server: 172.16.20.30
+    - Load Balancer VIP: 172.16.20.100
+    - Application Proxy: 172.16.20.50
 
 ### Default Policy: Deny All
+
 ```bash
 #!/usr/sbin/nft -f
 

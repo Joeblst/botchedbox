@@ -113,8 +113,8 @@
 | bot006   | Finanzen       | Developer  | Group | DevOps Bot - Pulls images and repositories |
 | bot007   | Metriken       | Developer  | Group | DevOps Bot - Pulls images and repositories |
 
-
 # Scenario
+
 - rz005 is new to the team they are missing the development Owner rights
 - dev001 introduced gitlab so they have owner rights to everything
 - dev002 managed App and Webentwicklung but since dev001 took over the project they had maintainer rights

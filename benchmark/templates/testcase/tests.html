@@ -4,118 +4,118 @@
 {% load test_filters %}
 
 {% block head %}
-        <title>Botchedbox | Test Results {{ testcase.id }}</title>
+    <title>Botchedbox | Test Results {{ testcase.id }}</title>
 {% endblock %}
 
 {% block content %}
-<div class="test-container">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">Testcase Results</h2>
-            <p class="text-muted mb-0">Test results for Testcase {{ testcase.id }}</p>
+    <div class="test-container">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">Testcase Results</h2>
+                <p class="text-muted mb-0">Test results for Testcase {{ testcase.id }}</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary d-flex align-items-center" id="refreshTable">
+                    {% bs_icon 'arrow-repeat' size='1em' extra_classes='me-2' %}
+                    Refresh Results
+                </button>
+                <a href="{% url 'get_testcases' %}" class="btn btn-outline-primary d-flex align-items-center">
+                    {% bs_icon 'arrow-left' size='1em' extra_classes='me-2' %}
+                    Back to Testcases
+                </a>
+            </div>
         </div>
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-outline-secondary d-flex align-items-center" id="refreshTable">
-                {% bs_icon 'arrow-repeat' size='1em' extra_classes='me-2' %}
-                Refresh Results
-            </button>
-            <a href="{% url 'get_testcases' %}" class="btn btn-outline-primary d-flex align-items-center">
-                {% bs_icon 'arrow-left' size='1em' extra_classes='me-2' %}
-                Back to Testcases
-            </a>
-        </div>
-    </div>
 
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded p-3 me-3">
-                            {% bs_icon 'clipboard-check' size='1.5em' %}
-                        </div>
-                        <div>
-                            <h6 class="card-subtitle mb-1 text-muted">Total Tests</h6>
-                            <h3 class="card-title mb-0">{{ total_tests }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success rounded p-3 me-3">
-                            {% bs_icon 'patch-check' size='1.5em' %}
-                        </div>
-                        <div>
-                            <h6 class="card-subtitle mb-1 text-muted">Validated</h6>
-                            <h3 class="card-title mb-0">{{ validated_tests }}</h3>
-                            <small class="text-muted">Validated responses</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded p-3 me-3">
-                            {% bs_icon 'hourglass-split' size='1.5em' %}
-                        </div>
-                        <div>
-                            <h6 class="card-subtitle mb-1 text-muted">Pending</h6>
-                            <h3 class="card-title mb-0">{{ pending_validation }}</h3>
-                            <small class="text-muted">Awaiting validation</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon bg-info bg-opacity-10 text-info rounded p-3 me-3">
-                            {% bs_icon 'graph-up' size='1.5em' %}
-                        </div>
-                        <div>
-                            <h6 class="card-subtitle mb-1 text-muted">Average Score</h6>
-                            <div class="d-flex align-items-baseline">
-                                <h3 class="card-title mb-0">{{ avg_score|floatformat:1 }}</h3>
-                                <small class="text-muted ms-1">%</small>
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded p-3 me-3">
+                                {% bs_icon 'clipboard-check' size='1.5em' %}
                             </div>
-                            <small class="text-muted">From validated tests</small>
+                            <div>
+                                <h6 class="card-subtitle mb-1 text-muted">Total Tests</h6>
+                                <h3 class="card-title mb-0">{{ total_tests }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success rounded p-3 me-3">
+                                {% bs_icon 'patch-check' size='1.5em' %}
+                            </div>
+                            <div>
+                                <h6 class="card-subtitle mb-1 text-muted">Validated</h6>
+                                <h3 class="card-title mb-0">{{ validated_tests }}</h3>
+                                <small class="text-muted">Validated responses</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded p-3 me-3">
+                                {% bs_icon 'hourglass-split' size='1.5em' %}
+                            </div>
+                            <div>
+                                <h6 class="card-subtitle mb-1 text-muted">Pending</h6>
+                                <h3 class="card-title mb-0">{{ pending_validation }}</h3>
+                                <small class="text-muted">Awaiting validation</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-info bg-opacity-10 text-info rounded p-3 me-3">
+                                {% bs_icon 'graph-up' size='1.5em' %}
+                            </div>
+                            <div>
+                                <h6 class="card-subtitle mb-1 text-muted">Average Score</h6>
+                                <div class="d-flex align-items-baseline">
+                                    <h3 class="card-title mb-0">{{ avg_score|floatformat:1 }}</h3>
+                                    <small class="text-muted ms-1">%</small>
+                                </div>
+                                <small class="text-muted">From validated tests</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Tests Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Test Results</h5>
-                <div class="d-flex gap-2">
-                    <div class="input-group">
+        <!-- Tests Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Test Results</h5>
+                    <div class="d-flex gap-2">
+                        <div class="input-group">
                         <span class="input-group-text border-end-0 bg-transparent">
                             {% bs_icon 'search' size='1em' %}
                         </span>
-                        <input type="text" class="form-control border-start-0 ps-0"
-                               id="searchTest" placeholder="Search tests...">
+                            <input type="text" class="form-control border-start-0 ps-0"
+                                   id="searchTest" placeholder="Search tests...">
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
                     <tr>
                         <th scope="col" class="ps-4">Benchmark ID</th>
                         <th scope="col">Model</th>
@@ -124,35 +124,36 @@
                         <th scope="col">Validation</th>
                         <th scope="col">Last Updated</th>
                     </tr>
-                </thead>
-                <tbody>
-                {% if tests %}
-                    {% for test in tests %}
-                        <tr class="test-row" onclick="window.location.href='{% url 'get_test' test.id %}'" style="cursor: pointer;">
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <span class="text-primary fw-medium">{{ test.benchmark.benchmark_id }}</span>
-                                </div>
-                            </td>
-                            <td>
+                    </thead>
+                    <tbody>
+                    {% if tests %}
+                        {% for test in tests %}
+                            <tr class="test-row" onclick="window.location.href='{% url 'get_test' test.id %}'"
+                                style="cursor: pointer;">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <span class="text-primary fw-medium">{{ test.benchmark.benchmark_id }}</span>
+                                    </div>
+                                </td>
+                                <td>
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">
                                     {{ test.model }}
                                 </span>
-                            </td>
-                            <td>
-                                {% if test.score is not None %}
-                                    <span class="fw-medium {% if test.score >= 80 %}text-success
+                                </td>
+                                <td>
+                                    {% if test.score is not None %}
+                                        <span class="fw-medium {% if test.score >= 80 %}text-success
                                                    {% elif test.score >= 60 %}text-warning
                                                    {% else %}text-danger{% endif %}">
                                         {{ test.score }}%
                                     </span>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% with state=test.state|upper %}
-                                <span class="badge rounded-pill
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% with state=test.state|upper %}
+                                        <span class="badge rounded-pill
                                     {% if state == 'RUNNING' %}bg-primary
                                     {% elif state == 'FINISHED' %}bg-success
                                     {% elif state == 'FAILED' %}bg-danger
@@ -160,64 +161,64 @@
                                     {% else %}bg-secondary{% endif %}">
                                     {{ test.state }}
                                 </span>
-                                {% endwith %}
-                            </td>
-                            <td>
-                                {% if test.responses.last.valid %}
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {% if test.responses.last.valid %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
                                         {% bs_icon 'check-circle' size='1em' extra_classes='me-1' %}
                                         Valid
                                     </span>
-                                {% else %}
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
                                         {% bs_icon 'x-circle' size='1em' extra_classes='me-1' %}
                                         Invalid
                                     </span>
-                                {% endif %}
-                            </td>
-                            <td>
+                                    {% endif %}
+                                </td>
+                                <td>
                                 <span class="text-muted" title="{{ test.timestamp }}">
                                     {{ test.timestamp|date:"M d, Y H:i" }}
                                 </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    {% bs_icon 'info-circle' size='1.5em' extra_classes='mb-2' %}
+                                    <p class="mb-0">No test results available for this testcase</p>
+                                </div>
                             </td>
                         </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4">
-                            <div class="text-muted">
-                                {% bs_icon 'info-circle' size='1.5em' extra_classes='mb-2' %}
-                                <p class="mb-0">No test results available for this testcase</p>
-                            </div>
-                        </td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchTest');
-    const tableRows = document.querySelectorAll('.test-row');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchTest');
+            const tableRows = document.querySelectorAll('.test-row');
 
-    searchInput.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = e.target.value.toLowerCase();
 
-        tableRows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+                tableRows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+
+            const refreshButton = document.getElementById('refreshTable');
+            refreshButton.addEventListener('click', function () {
+                window.location.reload();
+            });
         });
-    });
-
-    const refreshButton = document.getElementById('refreshTable');
-    refreshButton.addEventListener('click', function() {
-        window.location.reload();
-    });
-});
-</script>
+    </script>
 {% endblock %}

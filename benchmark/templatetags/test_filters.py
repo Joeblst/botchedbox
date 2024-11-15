@@ -3,20 +3,24 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def filter_validated(tests):
     """Filter tests that have valid responses"""
     return [test for test in tests if test.responses.last() and test.responses.last().valid]
+
 
 @register.filter
 def filter_pending_validation(tests):
     """Filter tests that are waiting for validation"""
     return [test for test in tests if test.state == 'WAITING FOR VALIDATION']
 
+
 @register.filter
 def filter_running(tests):
     """Filter tests that are currently running"""
     return [test for test in tests if test.state == 'RUNNING']
+
 
 @register.filter
 def avg_score(tests):

@@ -115,6 +115,7 @@ class NFTablesSimulator:
 
         return package.expected == action
 
+
 def _find_value(parts: List[str], keywords: List[str]) -> Optional[str]:
     """Find a value in parts list after any of the keywords."""
     for index, part in enumerate(parts):
@@ -159,7 +160,6 @@ def _find_ips(line: str, option: str) -> Optional[List[str]]:
                 ip_list = current_part.strip('{}').split(',')
                 ips.extend([ip.strip() for ip in ip_list if ip])
     return ips if ips else None
-
 
 
 def _find_ports(line: str, port_type: str) -> Optional[List[int]]:

@@ -8,7 +8,7 @@ problem:
 
 llm:
   default:
-    system: | 
+    system: |
       You are a strict iptables rules generator.
       Your role is to output raw, unformatted configuration files based on user specifications.
       Do not include any explanations, additional comments, or unnecessary formatting.
@@ -20,7 +20,7 @@ llm:
       Only use the chain: INPUT, OUTPUT, FORWARD.
       Only use IPv4.
       Output the configuration file between the tags @@@START_FILE@@@ and @@@END_FILE@@@.
-    prompt: | 
+    prompt: |
       We have a network infrastructure with the following configuration:
       - Network Zones:
           - Internet: Any on Port wan0
