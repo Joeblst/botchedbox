@@ -1,6 +1,6 @@
 {% load bootstrap_icons %}
 
-<div class="table-responsive">
+<div id="test-table" class="overview-table table-responsive">
     <table class="table table-hover mb-0">
         <thead class="table-light">
         <tr>
@@ -9,13 +9,13 @@
             <th scope="col">Score</th>
             <th scope="col">Status</th>
             <th scope="col">Validation</th>
-            <th scope="col">Last Updated</th>
+            <th scope="col" class="text-end pe-4">Last Updated</th>
         </tr>
         </thead>
         <tbody>
         {% if tests %}
             {% for test in tests %}
-                <tr class="test-row" onclick="window.location.href='{% url 'get_test' test.id %}'"
+                <tr class="hover-row test-row" onclick="window.location.href='{% url 'get_test' test.id %}'"
                     style="cursor: pointer;">
                     <td class="ps-4">
                         <div class="d-flex align-items-center">
@@ -29,8 +29,8 @@
                     </td>
                     <td>
                         {% if test.score is not None %}
-                            <span class="fw-medium {% if test.score >= 80 %}text-success
-                                           {% elif test.score >= 60 %}text-warning
+                            <span class="fw-medium {% if test.score >= 66 %}text-success
+                                           {% elif test.score >= 33 %}text-warning
                                            {% else %}text-danger{% endif %}">
                                 {{ test.score }}%
                             </span>
@@ -63,7 +63,7 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="text-end pe-4">
                         <span class="text-muted" title="{{ test.timestamp }}">
                             {{ test.timestamp|date:"M d, Y H:i" }}
                         </span>

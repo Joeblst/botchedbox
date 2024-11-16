@@ -1,6 +1,6 @@
 {% load bootstrap_icons %}
 
-<div class="table-responsive">
+<div id="testcase-table" class="overview-table table-responsive">
     <table class="table table-hover mb-0">
         <thead class="table-light">
         <tr>
@@ -13,17 +13,14 @@
         <tbody>
         {% if testcase_infos %}
             {% for testcase in testcase_infos %}
-                <tr class="testcase-row">
+                <tr class="hover-row testcase-row">
                     <td class="ps-4">
                         <div class="d-flex align-items-center">
                             <span class="text-primary fw-medium">{{ testcase.id }}</span>
                         </div>
                     </td>
                     <td>
-                        <span class="badge rounded-pill
-                            {% if testcase.type == 'CODE' %}bg-info
-                            {% elif testcase.type == 'MANUAL' %}bg-warning
-                            {% else %}bg-secondary{% endif %}">
+                        <span class="badge bg-secondary bg-opacity-10 white px-2 py-1">
                             {{ testcase.type }}
                         </span>
                     </td>

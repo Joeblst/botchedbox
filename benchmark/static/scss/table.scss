@@ -1,5 +1,5 @@
-.testcase-container {
-  // Table styles
+// Table styles
+.overview-table {
   .table {
     th {
       font-weight: 600;
@@ -13,35 +13,19 @@
     }
   }
 
-  // Description cell
-  .description-cell {
-    max-width: 500px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
-  // Type badges
-  .badge {
-    padding: 0.5em 1em;
-    font-weight: 500;
+  .btn-light {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
 
-    &.bg-info {
-      background-color: #3498db !important;
-    }
-
-    &.bg-warning {
-      background-color: #f1c40f !important;
-      color: #2c3e50;
-    }
-
-    &.bg-secondary {
-      background-color: #95a5a6 !important;
+    &:hover {
+      background-color: #e9ecef;
     }
   }
+
 
   // Row hover effect
-  .testcase-row {
+  .hover-row {
     transition: background-color 0.2s ease;
 
     &:hover {
@@ -49,20 +33,9 @@
     }
   }
 
-  // Button styles
-  .btn-danger {
-    transition: all 0.2s ease;
-
-    &:hover {
-      transform: translateY(-1px);
-    }
-  }
-
   // Search input
   .input-group {
     .form-control {
-      min-width: 250px;
-
       &:focus {
         box-shadow: none;
         border-color: #dee2e6;

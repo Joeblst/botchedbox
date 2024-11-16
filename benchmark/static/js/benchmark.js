@@ -44,31 +44,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Refresh button
-    const refreshButton = document.getElementById('refreshTable');
-    refreshButton.addEventListener('click', function () {
-        this.disabled = true;
-        const originalContent = this.innerHTML;
-        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Refreshing...';
-
-        fetch(window.location.href)
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newTable = doc.querySelector('.table-responsive');
-                document.querySelector('.table-responsive').innerHTML = newTable.innerHTML;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to refresh. Please try again.');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.innerHTML = originalContent;
-            });
-    });
-
     // Auto-refresh for running benchmarks
     function autoRefresh() {
         const runningBenchmarks = document.querySelectorAll('.badge.bg-running');
