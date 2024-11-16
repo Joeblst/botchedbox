@@ -60,29 +60,16 @@ def validate_apache_config(testcase: Testcase, response: Response) -> int:
 
         if test_result.returncode != 0:
             logging.error(f"Invalid Apache configuration: {test_result.stderr.strip()}")
-            response.check_result += f"""
-            Apache config was invalid:
-            ```
-            {test_result.stderr.strip()}\n
-            ```\n
-            """
+            response.check_result += f"Apache config was invalid:\n```\n{test_result.stderr.strip()}\n```\n"
             response.set_valid(False)
             return 0
         else:
-            logging.info("Apache configuration is valid.")
-            response.check_result += f"""
-            Config is valid.
-            """
+            response.check_result += "Config is valid."
             response.set_valid(True)
             return 1
     except subprocess.CalledProcessError as e:
         logging.error(f"Error during Apache config validation: {e.stderr}")
-        response.check_result += f"""
-        ```
-        Error during Apache config validation: 
-        {e.stderr.strip()}\n
-        ```\n
-        """
+        response.check_result += f"```\nError during Apache config validation:\n{e.stderr.strip()}\n```\n"
         response.set_valid(False)
         return 0
     finally:
@@ -125,83 +112,257 @@ def verify(testcase: Testcase, response: Response) -> int:
 
 def check_root_directory(response: Response) -> int:
     """
-    Checks if:
-    1. A "Require all denied" rule is set in the <Directory /> block.
-    2. An "AllowOverride None" directive is present in the same block.
-    3. An "Options None" directive is present in the same block.
+    Checks security configurations for root directory access:
+    1. Finds DocumentRoot value
+    2. Checks for security directives in <Directory /> block if it exists
+    3. If no / block exists, checks for directives in DocumentRoot block
+    4. Verifies "Require all denied", "AllowOverride None", and "Options None" directives
     """
     global test_counts
     test_counts += 4
     score = 0
     response.check_result += "### Default Deny Directive\n"
 
-    match = re.search(r"<Directory\s*/\s*>(.*?)</Directory>", response.response_file, re.DOTALL | re.IGNORECASE)
-    if match:
-        directory_content = match.group(1)
-        if re.search(r"^\s*Require\s+all\s+denied\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
-            score += 1
-        else:
-            logging.warning("Missing 'Require all denied' in <Directory /> block.")
-            response.check_result += "Missing Require all denied in <Directory /> block.\n"
-        if re.search(r"^\s*AllowOverride\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
-            score += 1
-        else:
-            logging.warning("Missing 'AllowOverride None' in <Directory /> block.")
-            response.check_result += "Missing AllowOverride in <Directory /> block.\n"
-        if re.search(r"^\s*Options\s+None\s*$", directory_content, re.MULTILINE | re.IGNORECASE):
-            score += 1
-        else:
-            logging.warning("Missing 'Options None' in <Directory /> block.")
-            response.check_result += "Missing Options in <Directory /> block.\n"
-        score += 1
-    else:
-        logging.warning("No '<Directory />' block found.")
-        response.check_result += "No '<Directory />' block found.\n"
-    return score
+    doc_root_match = re.search(r"^\s*DocumentRoot\s+[\"']?([^\"'\s]+)[\"']?\s*$",
+                               response.response_file,
+                               re.MULTILINE | re.IGNORECASE)
+    if not doc_root_match:
+        response.check_result += "- DocumentRoot not found in configuration.\n"
+        return score
 
+    doc_root = doc_root_match.group(1)
 
-def check_directories_locations(response: Response) -> int:
-    """
-    Checks if:
-    1. Every <Directory> and <Location> directive contains a "Require" directive.
-    2. Every "AllowOverride" directive is set to "None" in those blocks.
-    """
-    global test_counts
-    response.check_result += "### Directive and Locations\n"
-    matches = re.findall(
-        r"<(Directory|Location)(?:\s+[^>]*)?>(.*?)</\1>",
+    root_match = re.search(
+        r"<Directory\s*/\s*>(.*?)</Directory>",
         response.response_file,
         re.DOTALL | re.IGNORECASE
     )
-    test_counts += 3
+
+    # If no root block, check for DocumentRoot block
+    if not root_match:
+        doc_root_escaped = re.escape(doc_root)
+        root_match = re.search(
+            f"<Directory\s+[\"']?{doc_root_escaped}[\"']?\s*>(.*?)</Directory>",
+            response.response_file,
+            re.DOTALL | re.IGNORECASE
+        )
+        if not root_match:
+            response.check_result += "- No root directory configuration block found.\n"
+            return score
+
+    directory_content = root_match.group(1)
+
+    if re.search(
+            r"^\s*Require\s+all\s+denied\s*$",
+            directory_content,
+            re.MULTILINE | re.IGNORECASE
+    ):
+        score += 1
+    else:
+        response.check_result += "- Missing Require all denied in root directory block.\n"
+
+    if re.search(
+            r"^\s*AllowOverride\s+None\s*$",
+            directory_content,
+            re.MULTILINE | re.IGNORECASE
+    ):
+        score += 1
+    else:
+        response.check_result += "- Missing AllowOverride in root directory block.\n"
+
+    if re.search(r"^\s*Options\s+None\s*$",
+                 directory_content,
+                 re.MULTILINE | re.IGNORECASE):
+        score += 1
+    else:
+        response.check_result += "- Missing Options in root directory block.\n"
+    score += 1
+
+    return score
+
+
+def get_effective_directives(current_content: str, inherited_content: str) -> dict:
+    """
+    Determines effective directives by combining inherited and current content,
+    with current content taking precedence.
+    """
+    directives = {
+        'require': None,
+        'allowoverride': None,
+        'options': None
+    }
+
+    # Check inherited content first (will be overridden by current if present)
+    if inherited_content:
+        require_match = re.search(r"^\s*Require\s+(.+)$", inherited_content, re.MULTILINE | re.IGNORECASE)
+        if require_match:
+            directives['require'] = require_match.group(1)
+
+        allowoverride_match = re.search(r"^\s*AllowOverride\s+(\S+)", inherited_content, re.MULTILINE | re.IGNORECASE)
+        if allowoverride_match:
+            directives['allowoverride'] = allowoverride_match.group(1)
+
+        options_match = re.search(r"^\s*Options\s+(.+)$", inherited_content, re.MULTILINE | re.IGNORECASE)
+        if options_match:
+            directives['options'] = options_match.group(1)
+
+    # Check current content and override inherited values
+    require_match = re.search(r"^\s*Require\s+(.+)$", current_content, re.MULTILINE | re.IGNORECASE)
+    if require_match:
+        directives['require'] = require_match.group(1)
+
+    allowoverride_match = re.search(r"^\s*AllowOverride\s+(\S+)", current_content, re.MULTILINE | re.IGNORECASE)
+    if allowoverride_match:
+        directives['allowoverride'] = allowoverride_match.group(1)
+
+    options_match = re.search(r"^\s*Options\s+(.+)$", current_content, re.MULTILINE | re.IGNORECASE)
+    if options_match:
+        directives['options'] = options_match.group(1)
+
+    return directives
+
+
+def check_directories(response: Response) -> int:
+    """
+    Checks Directory blocks for security configurations, handling directive inheritance
+    and overrides correctly.
+    """
     score = 0
+    directory_blocks = {}
+
+    # Find all Directory blocks and store them by path
+    matches = re.findall(
+        r"<Directory[ \t]+(?:\"([^\"]+)\"|'([^']+)'|([^> \t]+))[ \t]*>(.*?)</Directory>",
+        response.response_file,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    # Process matches into dictionary
+    for match in matches:
+        path = next(p for p in match[:-1] if p)  # Get first non-empty path group
+        content = match[-1]
+        directory_blocks[path] = content
+
+    # Sort paths by length to handle inheritance (parent paths first)
+    sorted_paths = sorted(directory_blocks.keys(), key=len)
 
     all_require = True
     all_allowoverride = True
     all_options = True
-    for tag, content in matches:
-        if not re.search(r"^\s*Require\b", content, re.MULTILINE | re.IGNORECASE):
-            logging.warning(f"Missing 'Require' directive in <{tag}> block.")
-            response.check_result += f"- Missing Require directive in '<{tag}>' block.\n"
+
+    for path in directory_blocks:
+        current_content = directory_blocks[path]
+        inherited_content = ""
+
+        # Find parent paths that this path inherits from
+        for parent_path in sorted_paths:
+            if path.startswith(parent_path) and path != parent_path:
+                inherited_content += "\n" + directory_blocks[parent_path]
+
+        # Get effective directives after handling overrides
+        effective = get_effective_directives(current_content, inherited_content)
+
+        # Check Require directive
+        if not effective['require']:
+            response.check_result += f"- Missing Require directive in Directory block for {path}\n"
             all_require = False
 
-        allowoverride_matches = re.findall(r"^\s*AllowOverride\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
-        if not allowoverride_matches or any(val.lower() != "none" for val in allowoverride_matches):
-            logging.warning(f"'AllowOverride' is not set to 'None' in <{tag}> block.")
-            response.check_result += f"- AllowOverride is not set to 'None' in '<{tag}>' block.\n"
+        # Check AllowOverride directive
+        if not effective['allowoverride'] or effective['allowoverride'].lower() != "none":
+            response.check_result += f"- AllowOverride is not set to 'None' in Directory block for {path}\n"
             all_allowoverride = False
 
-        options_matches = re.findall(r"^\s*Options\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
-        if options_matches and any(
-                val.lower() == "Includes" and not val.lower() != "-Includes" for val in allowoverride_matches):
-            logging.warning(f"'Options' is set to 'Includes' in '<{tag}>' block.")
-            response.check_result += f"- Options is not set to 'Includes' in '<{tag}>' block.\n"
+        # Check Options directive
+        if effective['options'] and (
+                "includes" in effective['options'].lower()
+                and not "-includes" in effective['options'].lower()
+        ):
+            response.check_result += f"- Options allows Includes in Directory block for {path}\n"
             all_options = False
 
     score += 1 if all_require else 0
     score += 1 if all_allowoverride else 0
     score += 1 if all_options else 0
     return score
+
+
+def check_locations(response: Response) -> int:
+    """
+    Checks Location blocks for security configurations, handling directive inheritance
+    and overrides correctly.
+    """
+    score = 0
+    location_blocks = {}
+
+    # Find all Location blocks and store them by path
+    matches = re.findall(
+        r"<Location[ \t]+(?:\"([^\"]+)\"|'([^']+)'|([^> \t]+))[ \t]*>(.*?)</Location>",
+        response.response_file,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    # Process matches into dictionary
+    for match in matches:
+        path = next(p for p in match[:-1] if p)  # Get first non-empty path group
+        content = match[-1]
+        location_blocks[path] = content
+
+    # Sort paths by length to handle inheritance (parent paths first)
+    sorted_paths = sorted(location_blocks.keys(), key=len)
+
+    all_require = True
+    all_allowoverride = True
+    all_options = True
+
+    for path in location_blocks:
+        current_content = location_blocks[path]
+        inherited_content = ""
+
+        # Find parent paths that this path inherits from
+        for parent_path in sorted_paths:
+            if path.startswith(parent_path) and path != parent_path:
+                inherited_content += "\n" + location_blocks[parent_path]
+
+        # Get effective directives after handling overrides
+        effective = get_effective_directives(current_content, inherited_content)
+
+        # Check Require directive
+        if not effective['require']:
+            response.check_result += f"- Missing Require directive in Location block for {path}\n"
+            all_require = False
+
+        # Check AllowOverride directive (though not typically used in Location)
+        if not effective['allowoverride'] or effective['allowoverride'].lower() != "none":
+            response.check_result += f"- AllowOverride is not set to 'None' in Location block for {path}\n"
+            all_allowoverride = False
+
+        # Check Options directive
+        if effective['options'] and (
+                "includes" in effective['options'].lower()
+                and not "-includes" in effective['options'].lower()
+        ):
+            response.check_result += f"- Options allows Includes in Location block for {path}\n"
+            all_options = False
+
+    score += 1 if all_require else 0
+    score += 1 if all_allowoverride else 0
+    score += 1 if all_options else 0
+    return score
+
+
+def check_directories_locations(response: Response) -> int:
+    """
+    Checks Directory and Location blocks for security configurations.
+    Returns combined score from both checks.
+    """
+    global test_counts
+    test_counts += 6  # 3 checks each for Directory and Location
+    response.check_result += "### Directory and Location Directives\n"
+
+    dir_score = check_directories(response)
+    loc_score = check_locations(response)
+
+    return dir_score + loc_score
 
 
 def check_pid_not_in_documentroot(response: Response) -> int:
@@ -211,7 +372,7 @@ def check_pid_not_in_documentroot(response: Response) -> int:
     global test_counts
     test_counts += 1
     score = 0
-    response.check_result += "## Check PIDFile in DocumentRoot\n"
+    response.check_result += "### Check PIDFile in DocumentRoot\n"
     document_root_match = re.search(r"DocumentRoot\s+\"([^\"]+)\"", response.response_file, re.IGNORECASE)
     pidfile_match = re.search(r"PidFile\s+\"([^\"]+)\"", response.response_file, re.IGNORECASE)
 
@@ -222,11 +383,9 @@ def check_pid_not_in_documentroot(response: Response) -> int:
     if document_root and pidfile_path:
         if os.path.commonpath([document_root]) == os.path.commonpath([document_root, pidfile_path]):
             response.check_result += "PidFile is located inside the DocumentRoot.\n"
-            logging.warning("The PidFile is located within the DocumentRoot, which is not recommended.")
         else:
             score += 1
     else:
-        logging.info("DocumentRoot or PidFile not specified in the configuration.")
         score += 1
     return score
 
@@ -255,10 +414,8 @@ def check_unnecessary_auth_modules(response: Response) -> int:
 
     # Check if unnecessary authentication modules are present
     if unnecessary_auth_modules:
-        logging.warning("The following unnecessary auth modules should be disabled:")
-        response.check_result += "- The following unnecessary auth modules are not enabled:\n"
+        response.check_result += "The following unnecessary auth modules are not enabled:\n"
         for module in unnecessary_auth_modules:
-            logging.warning(f"Disable {module}")
             response.check_result += f"- Disable {module}\n"
     else:
         score += 1
@@ -283,7 +440,6 @@ def check_module_disabled(response: Response) -> int:
         )
 
         if match:
-            logging.warning(f"{module} is enabled and should be disabled.")
             response.check_result += f"- Disable {module}\n"
             score -= 1
 
@@ -296,18 +452,16 @@ def check_user_not_root(response: Response) -> int:
     """
     global test_counts
     test_counts += 2
-    response.check_result += "### User Not Root Directives\n"
+    response.check_result += "### Apache User Directives\n"
     score = 0
 
     user_match = re.search(r"^\s*User\s+(\S+)", response.response_file, re.MULTILINE | re.IGNORECASE)
     if user_match and user_match.group(1).lower() == "root":
-        logging.warning("User is set to 'root'.")
         response.check_result += "- User is set to 'root'.\n"
     else:
         score += 1
     group_match = re.search(r"^\s*Group\s+(\S+)", response.response_file, re.MULTILINE | re.IGNORECASE)
     if group_match and group_match.group(1).lower() == "root":
-        logging.warning("Group is set to 'root'.")
         response.check_result += "- Group is set to 'root'.\n"
     else:
         score += 1
@@ -363,24 +517,26 @@ def check_server_status_and_info_commented_out(response) -> int:
     score = 0
 
     # Check if the <Location /server-status> block is active
-    if re.search(r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>", response.response_file,
-                 re.DOTALL | re.IGNORECASE):
-        logging.warning("The <Location /server-status> block is active and should be commented out.")
+    if re.search(
+            r"(?<!#)\s*<Location\s+/server-status>\s*.*?</Location>",
+            response.response_file,
+            re.DOTALL | re.IGNORECASE
+    ):
         response.check_result += "- The <Location /server-status> block is active and should be commented out.\n"
     else:
         score += 1
 
-    # Check if the <Location /server-info> block is present and properly denies access
-    server_info_match = re.search(r"(?<!#)\s*<Location\s+/server-info>\s*(.*?)</Location>", response.response_file,
-                                  re.DOTALL | re.IGNORECASE)
+    server_info_match = re.search(
+        r"(?<!#)\s*<Location\s+/server-info>\s*(.*?)</Location>",
+        response.response_file,
+        re.DOTALL | re.IGNORECASE
+    )
     if server_info_match:
         server_info_content = server_info_match.group(1)
 
-        # Check if access is denied for all clients
         if re.search(r"(?<!#)\s*Deny\s+from\s+all", server_info_content, re.IGNORECASE):
             score += 1
         else:
-            logging.warning("The <Location /server-info> block should deny access to all clients.")
             response.check_result += "- The <Location /server-info> block should deny access to all clients.\n"
     else:
         score += 1
@@ -409,7 +565,6 @@ def check_trace_disabled(response) -> int:
         score += 1
     else:
         response.check_result += "- TraceEnable is not set to 'off'.\n"
-        logging.warning("TraceEnable is not set to 'off'.")
 
     directory_blocks = re.findall(
         r"<Directory\s+[^>]+>(.*?)</Directory>",
@@ -429,12 +584,10 @@ def check_trace_disabled(response) -> int:
             if "TRACE" in allowed_methods:
                 all_directories_compliant = False
                 response.check_result += "- TRACE is allowed in a <LimitExcept\> directive, which is not recommended.\n"
-                logging.warning("TRACE is allowed in a <LimitExcept> directive.")
                 break
         else:
             all_directories_compliant = False
             response.check_result += "- No <LimitExcept\> directive found in a <Directory\> block.\n"
-            logging.warning("No <LimitExcept> directive found in a <Directory> block.")
             break
 
     if all_directories_compliant:
@@ -478,7 +631,6 @@ def check_security_headers(response) -> int:
             score += 1
         else:
             response.check_result += f"- Missing or incorrect {header} configuration.\n"
-            logging.warning(f"Missing or incorrect {header} configuration.")
 
     return score
 
@@ -530,10 +682,8 @@ def check_ssl_configuration(response) -> int:
 
         if score == 0:
             response.check_result += "- SSLProtocol should either:\n  1. Use 'all -SSLv3 -TLSv1 -TLSv1.1' or\n  2. Use '-all +TLSv1.2 +TLSv1.3'\n"
-            logging.warning("SSLProtocol configuration is not secure")
     else:
         response.check_result += "- SSLProtocol is not set\n"
-        logging.warning("SSLProtocol is not set")
 
     # Check if SSLHonorCipherOrder is set to On
     ssl_honor_cipher_order_pattern = r"^\s*SSLHonorCipherOrder\s+On\s*$"
@@ -541,7 +691,6 @@ def check_ssl_configuration(response) -> int:
         score += 1
     else:
         response.check_result += "- SSLHonorCipherOrder must be set to On\n"
-        logging.warning("SSLHonorCipherOrder must be set to On")
 
     # Check SSLCipherSuite configuration
     ssl_cipher_suite_pattern = r"^\s*SSLCipherSuite\s+(.*)$"
@@ -563,9 +712,7 @@ def check_ssl_configuration(response) -> int:
         else:
             missing_exclusions = required_exclusions - exclusions_present
             response.check_result += f"- SSLCipherSuite should exclude: {', '.join(missing_exclusions)}\n"
-            logging.warning("SSLCipherSuite configuration is not secure")
     else:
         response.check_result += "- SSLCipherSuite is not set\n"
-        logging.warning("SSLCipherSuite is not set")
 
     return score
