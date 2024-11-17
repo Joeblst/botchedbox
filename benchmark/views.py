@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Avg
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -235,3 +236,41 @@ def get_testcase_tests(request, testcase_id):
         'avg_score': avg_score,
     }
     return render(request, 'testcase/tests.html', context)
+
+
+def get_evaluation_problem_type(request):
+    """View to render the template"""
+    return render(request, 'evaluation/problem_type_results.html')
+
+
+def load_evaluation_problem_type(request):
+    """API view to return the data with maxY"""
+    problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    result_list = []
+    for problem_type in problem_types:
+        chart_data = []
+        for model in models:
+            avg_score = Test.objects.filter(
+                problem_type=problem_type,
+                model=model,
+                score__isnull=False
+            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+            chart_data.append({
+                'name': model,
+                'value': round(float(avg_score), 2)
+            })
+
+        result_list.append({
+            'heading': f'Performance for {problem_type}',
+            'xaxis': 'Models',
+            'yaxis': 'Average Score',
+            'data': chart_data
+        })
+
+    return JsonResponse({
+        'maxY': 100,
+        'resultList': result_list
+    })

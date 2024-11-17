@@ -16,5 +16,6 @@ urlpatterns = [
     path('tests/<int:test_id>/', views.get_test, name='get_test'),
     path('tests/<int:test_id>/recalculate/', views.recalculate_score, name='recalculate_score'),
     path('response/<int:response_id>/validate/', views.manual_validation, name='manual_validation'),
-    path('testcases/<str:testcase_id>/tests/', views.get_testcase_tests, name='get_testcase_tests'),
+    path('evaluation/problem_type/', views.get_evaluation_problem_type, name='get_evaluation_problem_type'),
+    path('evaluation/problem_type/load/', views.load_evaluation_problem_type, name='load_evaluation_problem_type'),
 ]

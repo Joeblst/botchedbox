@@ -13,7 +13,7 @@
         <tbody>
         {% if benchmarks %}
             {% for benchmark in benchmarks %}
-                <tr class="hover-row benchmark-row" onclick="window.location.href='{% url 'get_benchmark' benchmark.benchmark_id %}'">
+                <tr class="benchmark-row">
                     <td class="ps-4">
                         <div class="d-flex align-items-center">
                             <span class="text-primary fw-medium">{{ benchmark.benchmark_id }}</span>

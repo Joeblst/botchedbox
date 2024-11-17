@@ -149,6 +149,10 @@ class Testcase(models.Model):
     def get_config(self) -> Dict:
         return ast.literal_eval(self.config)
 
+    def get_problem_type(self) -> LiteralString | str | bytes:
+        config = self.get_config()
+        return config.get('problem').get('type')
+
     def get_verify_script_path(self) -> LiteralString | str | bytes:
         config = self.get_config()
         return os.path.join(self.path, config.get('problem').get('verify_script'))

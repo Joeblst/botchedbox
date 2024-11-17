@@ -37,7 +37,7 @@
             </div>
             <ul class="nav nav-pills flex-column">
                 <li class="nav-item">
-                    <a href="/problem-types" class="nav-link text-white {% if '/problem-types' in request.path %}active{% endif %}">
+                    <a href="{% url 'get_evaluation_problem_type' %}" class="nav-link text-white {% if '/problem-types' in request.path %}active{% endif %}">
                         {% bs_icon 'diagram-3' size='1.1em' extra_classes='nav-icon' %}
                         <span>Problem Types</span>
                     </a>

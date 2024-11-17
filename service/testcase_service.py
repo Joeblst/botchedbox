@@ -65,6 +65,7 @@ def run_testcase(benchmark: Benchmark, testcase: Testcase) -> None:
         test = Test(
             benchmark=benchmark,
             testcase_id=testcase.id,
+            problem_type=testcase.get_problem_type(),
             model=llm,
             state='PENDING'
         )

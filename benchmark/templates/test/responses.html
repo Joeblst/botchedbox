@@ -22,6 +22,12 @@
                     {% bs_icon 'arrow-repeat' size='1em' extra_classes='me-2' %}
                     Recalculate Score
                 </button>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'get_benchmark' benchmark_id %}" class="btn btn-outline-primary d-flex align-items-center">
+                        {% bs_icon 'arrow-left' size='1em' extra_classes='me-2' %}
+                        Back to Tests
+                    </a>
+                </div>
             </div>
         </div>
 
