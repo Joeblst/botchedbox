@@ -15,5 +15,3 @@ anthropic
 openai
 pandas
 numpy
-matplotlib
-seaborn

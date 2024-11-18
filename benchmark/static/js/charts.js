@@ -1,12 +1,8 @@
-// static/js/charts.js
-
-// Generate consistent colors for models
-function generateColors(modelNames) {
+function generateColors(categories) {
     const colors = {};
-    modelNames.forEach((model, index) => {
-        // Using HSL for better control over colors
-        const hue = (index * 137.5) % 360;  // Golden angle approximation for good distribution
-        colors[model] = `hsl(${hue}, 70%, 50%)`;
+    categories.forEach((category, index) => {
+        const hue = (index * 137.5) % 360;
+        colors[category] = `hsl(${hue}, 70%, 50%)`;
     });
     return colors;
 }
@@ -104,7 +100,7 @@ function createChartContainer(id) {
     div.className = 'card mb-4';
     div.innerHTML = `
         <div class="card-body">
-            <canvas id="${id}" style="width: 100%; height: 400px;"></canvas>
+            <canvas id="${id}" style="width: 100%; height: 60vh;"></canvas>
         </div>
     `;
     return div;
@@ -118,21 +114,19 @@ async function loadCharts(endpoint) {
         const container = document.getElementById('charts-container');
         container.innerHTML = ''; // Clear any existing content
 
-        // Get all unique model names from all charts
-        const allModels = new Set();
+        const allCategories = new Set();
         data.resultList.forEach(chart => {
-            chart.data.forEach(item => allModels.add(item.name));
+            chart.data.forEach(item => allCategories.add(item.name));
         });
 
-        // Generate consistent colors for all models
-        const modelColors = generateColors(Array.from(allModels));
+        const categoryColors = generateColors(Array.from(allCategories));
 
         data.resultList.forEach((chartData, index) => {
             const chartId = `chart-${index}`;
             const chartContainer = createChartContainer(chartId);
             container.appendChild(chartContainer);
 
-            createChart(chartId, chartData, data.maxY, modelColors);
+            createChart(chartId, chartData, data.maxY, categoryColors);
         });
     } catch (error) {
         console.error('Error loading chart data:', error);

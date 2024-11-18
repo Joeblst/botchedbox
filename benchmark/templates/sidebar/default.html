@@ -37,19 +37,19 @@
             </div>
             <ul class="nav nav-pills flex-column">
                 <li class="nav-item">
-                    <a href="{% url 'get_evaluation_problem_type' %}" class="nav-link text-white {% if '/problem-types' in request.path %}active{% endif %}">
+                    <a href="{% url 'get_evaluation_problem_types' %}" class="nav-link text-white {% if '/problem-types' in request.path %}active{% endif %}">
                         {% bs_icon 'diagram-3' size='1.1em' extra_classes='nav-icon' %}
                         <span>Problem Types</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/llm" class="nav-link text-white {% if '/llm' in request.path %}active{% endif %}">
+                    <a href="{% url 'get_evaluation_models' %}" class="nav-link text-white {% if '/llm' in request.path %}active{% endif %}">
                         {% bs_icon 'cpu' size='1.1em' extra_classes='nav-icon' %}
                         <span>LLM Models</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/summary" class="nav-link text-white {% if '/summary' in request.path %}active{% endif %}">
+                    <a href="{% url 'get_evaluation_summary' %}" class="nav-link text-white {% if '/summary' in request.path %}active{% endif %}">
                         {% bs_icon 'graph-up' size='1.1em' extra_classes='nav-icon' %}
                         <span>Summary</span>
                     </a>

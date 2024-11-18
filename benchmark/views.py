@@ -238,13 +238,15 @@ def get_testcase_tests(request, testcase_id):
     return render(request, 'testcase/tests.html', context)
 
 
-def get_evaluation_problem_type(request):
-    """View to render the template"""
-    return render(request, 'evaluation/problem_type_results.html')
+def get_evaluation_problem_types(request):
+    return render(request, 'evaluation/bar_charts.html')
 
 
-def load_evaluation_problem_type(request):
-    """API view to return the data with maxY"""
+def get_evaluation_models(request):
+    return render(request, 'evaluation/bar_charts.html')
+
+
+def load_evaluation_problem_types(request):
     problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
@@ -274,3 +276,82 @@ def load_evaluation_problem_type(request):
         'maxY': 100,
         'resultList': result_list
     })
+
+
+def load_evaluation_models(request):
+    problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    result_list = []
+    for model in models:
+        chart_data = []
+        for problem_type in problem_types:
+            avg_score = Test.objects.filter(
+                problem_type=problem_type,
+                model=model,
+                score__isnull=False
+            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+            chart_data.append({
+                'name': problem_type,
+                'value': round(float(avg_score), 2)
+            })
+
+        result_list.append({
+            'heading': f'Performance for {model}',
+            'xaxis': 'Problem Types',
+            'yaxis': 'Average Score',
+            'data': chart_data
+        })
+
+    return JsonResponse({
+        'maxY': 100,
+        'resultList': result_list
+    })
+
+
+def get_evaluation_summary(request):
+    problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    table_data = []
+    for problem in problems:
+        scores = []
+        for model in models:
+            avg_score = Test.objects.filter(
+                testcase_id=problem,
+                model=model,
+                score__isnull=False
+            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            scores.append(round(float(avg_score), 2))
+
+        table_data.append({
+            'problem': problem,
+            'scores': scores
+        })
+
+    context = {
+        'problems': problems,  # Added this for the filter
+        'models': models,
+        'table_data': table_data
+    }
+    return render(request, 'evaluation/summary.html', context)
+
+
+def load_evaluation_summary(request):
+    problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    result_data = []
+    for problem in problems:
+        data_point = {'problem': problem}
+        for model in models:
+            avg_score = Test.objects.filter(
+                testcase_id=problem,
+                model=model,
+                score__isnull=False
+            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            data_point[model] = round(float(avg_score), 2)
+        result_data.append(data_point)
+
+    return JsonResponse({'data': result_data})

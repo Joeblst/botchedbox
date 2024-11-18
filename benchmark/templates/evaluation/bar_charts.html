@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block head %}
-    <title>Botchedbox | Eval Problem Types</title>
+    <title>Botchedbox | Evaluation</title>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +15,7 @@
     <script src="{% static 'js/charts.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            loadCharts('/evaluation/problem_type/load/');
+            loadCharts('load/');
         });
     </script>
 {% endblock %}
