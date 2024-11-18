@@ -160,6 +160,7 @@ def manual_validation(request, response_id):
             'knowledge': request.POST.get('knowledge') == 'true',
             'base_score': base_score,
         }
+        response.test.set_state("FINISHED")
     else:
         # For automated validation, maintain existing validation data
         try:
