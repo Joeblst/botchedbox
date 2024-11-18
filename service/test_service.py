@@ -39,13 +39,12 @@ def _prepare_test(testcase: Testcase, test: Test) -> Tuple[Response, str, str]:
 
 
 def run_test_script(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
-    """Executes the given test based on its configuration."""
     response, prompt, system = _prepare_test(testcase, test)
     file = testcase.get_file()
     response.content, response.duration = llm_instance.execute_timed_prompt(
         system=system,
         prompt=prompt,
-        temperature=0,
+        temperature=test.temperature / 100,
         file=file
     )
     response.save()
@@ -81,8 +80,12 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
     for index, row in df.iterrows():
         try:
             line += 1
-            content, duration = llm_instance.execute_timed_prompt(system=system, prompt=prompt, temperature=1,
-                                                                  file=row[0])
+            content, duration = llm_instance.execute_timed_prompt(
+                system=system,
+                prompt=prompt,
+                temperature=test.temperature / 100,
+                file=row[0]
+            )
             response.add_content(f'{line}: {content}\n')
             response.duration += duration
             test.score += (1 * score_weighting) if row[-1] == _interpret_bool_string(content) else 0
@@ -95,12 +98,12 @@ def run_test_table(testcase: Testcase, test: Test, llm_instance: LlmInstance) ->
     test.set_state('FINISHED')
 
 
-def run_test_manual(testcase, test, llm_instance):
+def run_test_manual(testcase: Testcase, test: Test, llm_instance: LlmInstance) -> None:
     response, prompt, system = _prepare_test(testcase, test)
     response.content, response.duration = llm_instance.execute_timed_prompt(
         system=system,
         prompt=prompt,
-        temperature=0
+        temperature=test.temperature / 100,
     )
     file_match = re.search(r"@@@START_FILE@@@(.*?)@@@END_FILE@@@", response.content, re.DOTALL)
     if file_match:

@@ -91,35 +91,15 @@ function filterData(data, selectedProblems, selectedModels) {
         });
 }
 
-function updateTable(filteredData, selectedModels) {
-    const tbody = document.querySelector('table tbody');
-    const rows = tbody.querySelectorAll('tr');
-
-    rows.forEach(row => {
-        const problem = row.dataset.problem;
-        if (!problem) return;
-
-        const shouldShow = filteredData.some(item => item.problem === problem);
-        row.style.display = shouldShow ? '' : 'none';
-
-        if (shouldShow) {
-            const cells = row.querySelectorAll('td');
-            cells.forEach((cell, index) => {
-                if (index === 0) return; // Skip problem column
-                const columnHeader = document.querySelector(`th[data-model]:nth-child(${index + 1})`);
-                if (columnHeader) {
-                    const model = columnHeader.dataset.model;
-                    cell.style.display = selectedModels.includes(model) ? '' : 'none';
-                }
-            });
-        }
-    });
-
-    // Update header visibility
-    document.querySelectorAll('th[data-model]').forEach(th => {
-        const model = th.dataset.model;
-        th.style.display = selectedModels.includes(model) ? '' : 'none';
-    });
+async function updateTable(temperature) {
+    try {
+        const response = await fetch(`table/?temperature=${temperature}`);
+        const data = await response.text();
+        const tableContainer = document.querySelector('.overview-table');
+        tableContainer.innerHTML = data;
+    } catch (error) {
+        console.error('Error updating table:', error);
+    }
 }
 
 function createChartContainer(id) {
@@ -151,15 +131,13 @@ function updateVisualization() {
 // Data loading and chart initialization
 async function loadCharts(endpoint, selectedProblems, selectedModels) {
     try {
-        const response = await fetch(endpoint);
+        const temperature = document.getElementById('temperature').value;
+        const response = await fetch(`${endpoint}?temperature=${temperature}`);
         const jsonData = await response.json();
         const data = jsonData.data;
 
         // Filter data
         const filteredData = filterData(data, selectedProblems, selectedModels);
-
-        // Update table
-        updateTable(filteredData, selectedModels);
 
         // Update chart
         const container = document.getElementById('radar-container');
@@ -170,6 +148,9 @@ async function loadCharts(endpoint, selectedProblems, selectedModels) {
         container.appendChild(chartContainer);
         createRadarChart(chartId, filteredData, selectedModels, selectedProblems);
 
+        // Update table
+        await updateTable(temperature);
+
     } catch (error) {
         console.error('Error loading chart data:', error);
         document.getElementById('radar-container').innerHTML =
@@ -179,11 +160,11 @@ async function loadCharts(endpoint, selectedProblems, selectedModels) {
 
 // Initialize everything when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial load
     updateVisualization();
-    
-    // Add event listeners to checkboxes
+
     document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', updateVisualization);
     });
+
+    document.getElementById('temperature').addEventListener('change', updateVisualization);
 });

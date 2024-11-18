@@ -9,13 +9,15 @@ function generateColors(categories) {
 
 function createChart(containerId, chartData, maxY, modelColors) {
     const ctx = document.getElementById(containerId);
+    const temperature = document.getElementById('temperature').value;
+    const title = `${chartData.heading} (Temperature: ${temperature})`;
 
     return new Chart(ctx, {
         type: 'bar',
         data: {
             labels: chartData.data.map(item => item.name),
             datasets: [{
-                label: chartData.heading,
+                label: title,
                 data: chartData.data.map(item => item.value),
                 backgroundColor: chartData.data.map(item => modelColors[item.name]),
                 borderColor: chartData.data.map(item => modelColors[item.name]),
@@ -48,45 +50,33 @@ function createChart(containerId, chartData, maxY, modelColors) {
             plugins: {
                 title: {
                     display: true,
-                    text: chartData.heading,
-                    font: {
-                        size: 16
-                    },
+                    text: title,
+                    font: { size: 16 },
                     padding: 20
                 },
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: true
-                },
+                legend: { display: false },
+                tooltip: { enabled: true },
                 datalabels: {
                     anchor: 'end',
                     align: 'top',
-                    formatter: function(value) {
-                        return value.toFixed(1);
-                    },
-                    font: {
-                        weight: 'bold'
-                    },
+                    formatter: value => value.toFixed(1),
+                    font: { weight: 'bold' },
                     padding: 4
                 }
             }
         },
         plugins: [{
             afterDraw: function(chart) {
-                var ctx = chart.ctx;
-                chart.data.datasets.forEach(function(dataset) {
-                    var meta = chart.getDatasetMeta(0);
-                    meta.data.forEach(function(bar, index) {
-                        var data = dataset.data[index];
-                        var position = bar.getCenterPoint();
-
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach(dataset => {
+                    const meta = chart.getDatasetMeta(0);
+                    meta.data.forEach((bar, index) => {
+                        const data = dataset.data[index];
+                        const position = bar.getCenterPoint();
                         ctx.fillStyle = '#000000';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'bottom';
                         ctx.font = 'bold 12px Arial';
-
                         ctx.fillText(data.toFixed(1), position.x, bar.base - 5);
                     });
                 });
@@ -108,11 +98,11 @@ function createChartContainer(id) {
 
 async function loadCharts(endpoint) {
     try {
-        const response = await fetch(endpoint);
+        const response = await fetch(`${endpoint}?temperature=${document.getElementById('temperature').value}`);
         const data = await response.json();
 
         const container = document.getElementById('charts-container');
-        container.innerHTML = ''; // Clear any existing content
+        container.innerHTML = '';
 
         const allCategories = new Set();
         data.resultList.forEach(chart => {
@@ -125,7 +115,6 @@ async function loadCharts(endpoint) {
             const chartId = `chart-${index}`;
             const chartContainer = createChartContainer(chartId);
             container.appendChild(chartContainer);
-
             createChart(chartId, chartData, data.maxY, categoryColors);
         });
     } catch (error) {
@@ -134,3 +123,8 @@ async function loadCharts(endpoint) {
             '<div class="alert alert-danger">Error loading chart data</div>';
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadCharts('load/');
+    document.getElementById('temperature').addEventListener('change', () => loadCharts('load/'));
+});

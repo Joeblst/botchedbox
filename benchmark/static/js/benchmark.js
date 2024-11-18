@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Start benchmark button
     const startButton = document.getElementById('start-button');
+    const temperature = document.getElementById('temperature').value;
     startButton.addEventListener('click', function () {
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting...';
@@ -9,7 +10,10 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
-            }
+            },
+            body: JSON.stringify({
+                temperature: parseInt(temperature)
+            })
         })
             .then(response => {
                 if (response.ok) {

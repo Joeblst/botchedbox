@@ -44,9 +44,9 @@ class ValidationForm {
     }
 
     updateScore() {
-        const score = Array.from(this.checkboxes)
+        const score = Math.ceil(Array.from(this.checkboxes)
             .filter(checkbox => checkbox.checked)
-            .length * 20;
+            .length * 100 / 6);
 
         this.scoreDisplay.textContent = score;
     }
@@ -106,6 +106,7 @@ class ValidationForm {
         // Add manual validation data if it's a manual validation
         if (this.isManual) {
             formData.append('valid', document.getElementById('validCheck').checked);
+            formData.append('functional', document.getElementById('functionalCheck').checked);
             formData.append('executable', document.getElementById('executableCheck').checked);
             formData.append('available_function', document.getElementById('availableFunctionCheck').checked);
             formData.append('formatting', document.getElementById('formattingCheck').checked);

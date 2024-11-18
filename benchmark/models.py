@@ -26,6 +26,7 @@ class Test(models.Model):
     model = models.CharField(max_length=100)
     score = models.IntegerField(default=0, blank=True, null=True)
     state = models.CharField(max_length=100)
+    temperature = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

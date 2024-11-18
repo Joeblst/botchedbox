@@ -56,8 +56,7 @@ def load_testcases() -> None:
         testcase.save()
 
 
-def run_testcase(benchmark: Benchmark, testcase: Testcase) -> None:
-    """Executes the given testcase based on its configuration."""
+def run_testcase(benchmark: Benchmark, testcase: Testcase, temperature: int) -> None:
     testcase_config = testcase.get_config()
     for llm in testcase_config.get('llm'):
         if llm == 'default':
@@ -67,7 +66,8 @@ def run_testcase(benchmark: Benchmark, testcase: Testcase) -> None:
             testcase_id=testcase.id,
             problem_type=testcase.get_problem_type(),
             model=llm,
-            state='PENDING'
+            state='PENDING',
+            temperature=temperature
         )
         test.save()
 

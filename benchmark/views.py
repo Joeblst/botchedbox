@@ -1,4 +1,5 @@
 import json
+import math
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -63,9 +64,13 @@ def toggle_testcase(request, testcase_id):
 
 
 def start_benchmark(request):
-    benchmark_id = uuid.uuid4().hex
-    executor.submit(benchmark_service.run_benchmark, benchmark_id)
-    return HttpResponse('Benchmark started')
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        temperature = data.get('temperature', 0)
+        benchmark_id = uuid.uuid4().hex
+        executor.submit(benchmark_service.run_benchmark, benchmark_id, temperature)
+        return HttpResponse('Benchmark started')
+    return HttpResponse('Method not allowed', status=405)
 
 
 def get_benchmark(request, benchmark_id):
@@ -144,16 +149,18 @@ def manual_validation(request, response_id):
 
     if is_manual:
         # Calculate base score for manual validation
-        base_score = sum([
+        base_score = math.ceil(sum([
             request.POST.get('valid') == 'true',
+            request.POST.get('functional') == 'true',
             request.POST.get('executable') == 'true',
             request.POST.get('available_function') == 'true',
             request.POST.get('formatting') == 'true',
             request.POST.get('knowledge') == 'true',
-        ]) * 20
+        ]) * 100 / 6)
 
         validation_data = {
             'valid': request.POST.get('valid') == 'true',
+            'functional': request.POST.get('functional') == 'true',
             'executable': request.POST.get('executable') == 'true',
             'available_function': request.POST.get('available_function') == 'true',
             'formatting': request.POST.get('formatting') == 'true',
@@ -248,6 +255,7 @@ def get_evaluation_models(request):
 
 
 def load_evaluation_problem_types(request):
+    temperature = request.GET.get('temperature', 0)
     problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
@@ -258,7 +266,8 @@ def load_evaluation_problem_types(request):
             avg_score = Test.objects.filter(
                 problem_type=problem_type,
                 model=model,
-                score__isnull=False
+                score__isnull=False,
+                temperature=temperature
             ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
 
             chart_data.append({
@@ -278,8 +287,8 @@ def load_evaluation_problem_types(request):
         'resultList': result_list
     })
 
-
 def load_evaluation_models(request):
+    temperature = request.GET.get('temperature', 0)
     problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
@@ -290,7 +299,8 @@ def load_evaluation_models(request):
             avg_score = Test.objects.filter(
                 problem_type=problem_type,
                 model=model,
-                score__isnull=False
+                score__isnull=False,
+                temperature=temperature
             ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
 
             chart_data.append({
@@ -312,6 +322,7 @@ def load_evaluation_models(request):
 
 
 def get_evaluation_summary(request):
+    temperature = request.GET.get('temperature', 0)
     problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
@@ -322,7 +333,8 @@ def get_evaluation_summary(request):
             avg_score = Test.objects.filter(
                 testcase_id=problem,
                 model=model,
-                score__isnull=False
+                score__isnull=False,
+                temperature=temperature
             ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
             scores.append(round(float(avg_score), 2))
 
@@ -332,14 +344,14 @@ def get_evaluation_summary(request):
         })
 
     context = {
-        'problems': problems,  # Added this for the filter
+        'problems': problems,
         'models': models,
         'table_data': table_data
     }
     return render(request, 'evaluation/summary.html', context)
 
-
 def load_evaluation_summary(request):
+    temperature = request.GET.get('temperature', 0)
     problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
@@ -350,9 +362,83 @@ def load_evaluation_summary(request):
             avg_score = Test.objects.filter(
                 testcase_id=problem,
                 model=model,
-                score__isnull=False
+                score__isnull=False,
+                temperature=temperature
             ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
             data_point[model] = round(float(avg_score), 2)
         result_data.append(data_point)
 
     return JsonResponse({'data': result_data})
+
+
+def get_evaluation_table(request):
+    temperature = request.GET.get('temperature', 0)
+    problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    table_data = []
+    for problem in problems:
+        scores = []
+        for model in models:
+            avg_score = Test.objects.filter(
+                testcase_id=problem,
+                model=model,
+                score__isnull=False,
+                temperature=temperature
+            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            scores.append(round(float(avg_score), 2))
+
+        table_data.append({
+            'problem': problem,
+            'scores': scores
+        })
+
+    return render(request, 'evaluation/summary_table.html', {
+        'models': models,
+        'table_data': table_data
+    })
+
+
+def get_evaluation_temperatures(request):
+    return render(request, 'evaluation/line_charts.html')
+
+
+def load_evaluation_temperatures(request):
+    problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+    temperatures = list(Test.objects.values_list('temperature', flat=True).distinct().order_by('temperature'))
+
+    result_list = []
+    for model in models:
+        chart_data = []
+        for problem_type in problem_types:
+            data_points = []
+            for temp in temperatures:
+                avg_score = Test.objects.filter(
+                    problem_type=problem_type,
+                    model=model,
+                    temperature=temp,
+                    score__isnull=False
+                ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+                data_points.append({
+                    'temperature': temp,
+                    'score': round(float(avg_score), 2)
+                })
+
+            chart_data.append({
+                'name': problem_type,
+                'data': data_points
+            })
+
+        result_list.append({
+            'heading': f'Temperature Impact on {model}',
+            'xaxis': 'Temperature',
+            'yaxis': 'Average Score',
+            'data': chart_data
+        })
+
+    return JsonResponse({
+        'maxY': 100,
+        'resultList': result_list
+    })

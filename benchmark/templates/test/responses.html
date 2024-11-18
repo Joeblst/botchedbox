@@ -144,6 +144,19 @@
                                                     </div>
                                                 </div>
 
+                                                <!-- Functional Response -->
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input validation-check" type="checkbox"
+                                                               id="functionalCheck"
+                                                               {% if current_checks.valid %}checked{% endif %}>
+                                                        <label class="form-check-label" for="functionalCheck">
+                                                            <strong>Functional</strong>
+                                                            <small class="d-block text-muted">Response solves the problem</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
                                                 <!-- Executable -->
                                                 <div class="mb-3">
                                                     <div class="form-check">
