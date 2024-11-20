@@ -50,7 +50,3 @@ llm:
           - Established connections should be allowed
           - Only the bare minimum should be allowed.
           - Provide nftables firewall rules that enforce these requirements.
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

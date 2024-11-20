@@ -24,7 +24,3 @@ llm:
       Only staff should be able to read and write documents.
       Security events should be traceable.
       Printing is not required.
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

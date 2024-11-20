@@ -18,7 +18,3 @@ llm:
       Output True if it is phishing or spam and False if it is a legitimate mail.
     prompt: |
       Check the following email content. Is it spam/phishing or not?
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

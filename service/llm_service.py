@@ -28,7 +28,10 @@ class LlmInstance:
         if isinstance(self.client, Anthropic):
             response = self._get_anthropic_message(system, prompt, temperature)
         else:
-            response = self._get_openai_message(system, prompt, temperature)
+            if 'o1-' in self.model:
+                response = self._get_o1_message(system, prompt, temperature)
+            else:
+                response = self._get_openai_message(system, prompt, temperature)
         end = time.time()
         return response, end - start
 
@@ -40,6 +43,15 @@ class LlmInstance:
                 {"role": "user", "content": prompt}
             ],
             temperature=temperature
+        )
+        return response.choices[0].message.content
+
+    def _get_o1_message(self, system: str, prompt: str, temperature: float = 0) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "user", "content": "\n".join([system, prompt])}
+            ],
         )
         return response.choices[0].message.content
 

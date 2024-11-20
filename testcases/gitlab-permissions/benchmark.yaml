@@ -41,7 +41,3 @@ llm:
       ext002 is an external reviewer and just gives feedback to web code.
       The bot users are crucial to our dev ops process. They should be able to pull images and repositories
       Keep the inheritance of GitLab in mind. No rights should be granted if not specified.
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

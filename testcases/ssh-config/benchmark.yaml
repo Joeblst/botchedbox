@@ -27,7 +27,3 @@ llm:
       Network B has access to admin Group
       Network C only has access to guest Group
       Password Login should only be allowed in Network C
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

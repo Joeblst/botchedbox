@@ -1,6 +1,9 @@
 services:
   botchedbox:
     build: .
+    environment:
+      OPENAI_KEY: ${OPENAI_KEY}
+      ANTHROPIC_KEY: ${ANTHROPIC_KEY}
     volumes:
       - .:/opt/project/
       - /var/run/docker.sock:/var/run/docker.sock

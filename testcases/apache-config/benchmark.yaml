@@ -22,7 +22,3 @@ llm:
       The DocumentRoot is /var/www/
       Only LDAP login is used.
       No .htaccess is used.
-  llama3.1:
-  mistral:
-  gpt-4o:
-  claude-3-5-sonnet-20241022:

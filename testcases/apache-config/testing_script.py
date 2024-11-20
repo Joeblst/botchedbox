@@ -276,8 +276,9 @@ def check_directories(response: Response) -> int:
         if effective['options'] and (
                 "includes" in effective['options'].lower()
                 and not "-includes" in effective['options'].lower()
+                and not "includesnoexec" in effective['options'].lower()
         ):
-            response.check_result += f"- Options allows Includes in Directory block for {path}\n"
+            response.check_result += f"- Options allows Includes in Directory block for {path} \n"
             all_options = False
 
     score += 1 if all_require else 0
@@ -340,6 +341,7 @@ def check_locations(response: Response) -> int:
         if effective['options'] and (
                 "includes" in effective['options'].lower()
                 and not "-includes" in effective['options'].lower()
+                and not "IncludesNOEXEC" in effective['options'].lower()
         ):
             response.check_result += f"- Options allows Includes in Location block for {path}\n"
             all_options = False
@@ -662,7 +664,7 @@ def check_ssl_configuration(response) -> int:
         protocols = protocol_match.group(1).lower().strip().split()
 
         # Handle both additive and subtractive approaches
-        if "all" in protocols:
+        if "all" in protocols and not "-all" in protocols:
             # Subtractive approach: must disable all insecure protocols
             required_disabled = {"-sslv3", "-tlsv1", "-tlsv1.1"}
             if all(proto in [p.lower() for p in protocols] for proto in required_disabled):

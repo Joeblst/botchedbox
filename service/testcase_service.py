@@ -57,19 +57,20 @@ def load_testcases() -> None:
 
 
 def run_testcase(benchmark: Benchmark, testcase: Testcase, temperature: int) -> None:
-    testcase_config = testcase.get_config()
-    for llm in testcase_config.get('llm'):
-        if llm == 'default':
-            continue
-        test = Test(
-            benchmark=benchmark,
-            testcase_id=testcase.id,
-            problem_type=testcase.get_problem_type(),
-            model=llm,
-            state='PENDING',
-            temperature=temperature
-        )
-        test.save()
+    with open(os.path.join("config", "llm.yaml"), "r") as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+        for llm in config.get('credentials'):
+            if llm == 'default':
+                continue
+            test = Test(
+                benchmark=benchmark,
+                testcase_id=testcase.id,
+                problem_type=testcase.get_problem_type(),
+                model=llm,
+                state='PENDING',
+                temperature=temperature
+            )
+            test.save()
 
 
 def recalculate_score(test: Test) -> None:
