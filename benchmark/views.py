@@ -11,7 +11,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 
-from service import testcase_service, benchmark_service
+from service import testcase_service, benchmark_service, evalutation_service
 from .models import Test, Testcase, Benchmark, Response
 
 executor = ThreadPoolExecutor()
@@ -254,6 +254,11 @@ def get_evaluation_models(request):
     return render(request, 'evaluation/bar_charts.html')
 
 
+def get_evaluation_testcases(request):
+    """Render the boxplot charts view for testcase performance."""
+    return render(request, 'evaluation/bar_charts.html')
+
+
 def load_evaluation_problem_types(request):
     temperature = request.GET.get('temperature', 0)
     problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
@@ -263,22 +268,23 @@ def load_evaluation_problem_types(request):
     for problem_type in problem_types:
         chart_data = []
         for model in models:
-            avg_score = Test.objects.filter(
+            queryset = Test.objects.filter(
                 problem_type=problem_type,
                 model=model,
                 score__isnull=False,
                 temperature=temperature
-            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            )
 
+            stats = evalutation_service.calculate_box_stats(queryset)
             chart_data.append({
                 'name': model,
-                'value': round(float(avg_score), 2)
+                **stats
             })
 
         result_list.append({
-            'heading': f'Performance for {problem_type}',
+            'heading': f'Performance Distribution for {problem_type}',
             'xaxis': 'Models',
-            'yaxis': 'Average Score',
+            'yaxis': 'Score Distribution',
             'data': chart_data
         })
 
@@ -286,6 +292,7 @@ def load_evaluation_problem_types(request):
         'maxY': 100,
         'resultList': result_list
     })
+
 
 def load_evaluation_models(request):
     temperature = request.GET.get('temperature', 0)
@@ -296,22 +303,23 @@ def load_evaluation_models(request):
     for model in models:
         chart_data = []
         for problem_type in problem_types:
-            avg_score = Test.objects.filter(
+            queryset = Test.objects.filter(
                 problem_type=problem_type,
                 model=model,
                 score__isnull=False,
                 temperature=temperature
-            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            )
 
+            stats = evalutation_service.calculate_box_stats(queryset)
             chart_data.append({
                 'name': problem_type,
-                'value': round(float(avg_score), 2)
+                **stats
             })
 
         result_list.append({
-            'heading': f'Performance for {model}',
+            'heading': f'Performance Distribution for {model}',
             'xaxis': 'Problem Types',
-            'yaxis': 'Average Score',
+            'yaxis': 'Score Distribution',
             'data': chart_data
         })
 
@@ -320,6 +328,48 @@ def load_evaluation_models(request):
         'resultList': result_list
     })
 
+
+def load_evaluation_testcases(request):
+    """Load data for testcase performance boxplots."""
+    temperature = request.GET.get('temperature', 0)
+    testcases = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+
+    result_list = []
+    for testcase_id in testcases:
+        chart_data = []
+        for model in models:
+            queryset = Test.objects.filter(
+                testcase_id=testcase_id,
+                model=model,
+                score__isnull=False,
+                temperature=temperature
+            )
+
+            stats = evalutation_service.calculate_box_stats(queryset)
+            chart_data.append({
+                'name': model,
+                **stats
+            })
+
+        # Get testcase info for better heading
+        try:
+            testcase = Testcase.objects.get(id=testcase_id)
+            testcase_name = testcase.get_config().get('name', testcase_id)
+        except Testcase.DoesNotExist:
+            testcase_name = testcase_id
+
+        result_list.append({
+            'heading': f'Performance Distribution for {testcase_name}',
+            'xaxis': 'Models',
+            'yaxis': 'Score Distribution',
+            'data': chart_data
+        })
+
+    return JsonResponse({
+        'maxY': 100,
+        'resultList': result_list
+    })
 
 def get_evaluation_summary(request):
     temperature = request.GET.get('temperature', 0)

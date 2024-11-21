@@ -2,7 +2,7 @@ function generateColors(categories) {
     const colors = {};
     categories.forEach((category, index) => {
         const hue = (index * 137.5) % 360;
-        colors[category] = `hsl(${hue}, 70%, 50%)`;
+        colors[category] = `hsla(${hue}, 70%, 50%, 0.7)`;
     });
     return colors;
 }
@@ -13,15 +13,25 @@ function createChart(containerId, chartData, maxY, modelColors) {
     const title = `${chartData.heading} (Temperature: ${temperature})`;
 
     return new Chart(ctx, {
-        type: 'bar',
+        type: 'boxplot',
         data: {
             labels: chartData.data.map(item => item.name),
             datasets: [{
                 label: title,
-                data: chartData.data.map(item => item.value),
+                data: chartData.data.map(item => ({
+                    min: item.min,
+                    q1: item.q1,
+                    median: item.median,
+                    q3: item.q3,
+                    max: item.max,
+                    mean: item.mean
+                })),
                 backgroundColor: chartData.data.map(item => modelColors[item.name]),
-                borderColor: chartData.data.map(item => modelColors[item.name]),
-                borderWidth: 1
+                borderColor: chartData.data.map(item => modelColors[item.name].replace('0.7', '1')),
+                borderWidth: 1,
+                outlierBackgroundColor: '#666',
+                itemRadius: 0,
+                meanBackgroundColor: '#000'
             }]
         },
         options: {
@@ -55,33 +65,23 @@ function createChart(containerId, chartData, maxY, modelColors) {
                     padding: 20
                 },
                 legend: { display: false },
-                tooltip: { enabled: true },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'top',
-                    formatter: value => value.toFixed(1),
-                    font: { weight: 'bold' },
-                    padding: 4
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const item = context.raw;
+                            return [
+                                `Min: ${item.min.toFixed(1)}`,
+                                `Q1: ${item.q1.toFixed(1)}`,
+                                `Median: ${item.median.toFixed(1)}`,
+                                `Mean: ${item.mean.toFixed(1)}`,
+                                `Q3: ${item.q3.toFixed(1)}`,
+                                `Max: ${item.max.toFixed(1)}`
+                            ];
+                        }
+                    }
                 }
             }
-        },
-        plugins: [{
-            afterDraw: function(chart) {
-                const ctx = chart.ctx;
-                chart.data.datasets.forEach(dataset => {
-                    const meta = chart.getDatasetMeta(0);
-                    meta.data.forEach((bar, index) => {
-                        const data = dataset.data[index];
-                        const position = bar.getCenterPoint();
-                        ctx.fillStyle = '#000000';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'bottom';
-                        ctx.font = 'bold 12px Arial';
-                        ctx.fillText(data.toFixed(1), position.x, bar.base - 5);
-                    });
-                });
-            }
-        }]
+        }
     });
 }
 

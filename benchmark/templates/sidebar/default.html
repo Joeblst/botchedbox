@@ -49,6 +49,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{% url 'get_evaluation_testcases' %}" class="nav-link text-white {% if '/testcases' in request.path %}active{% endif %}">
+                        {% bs_icon 'bookmark-check' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Testcases</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{% url 'get_evaluation_temperatures' %}" class="nav-link text-white {% if '/temperatures' in request.path %}active{% endif %}">
                         {% bs_icon 'thermometer-half' size='1.1em' extra_classes='nav-icon' %}
                         <span>Temperatures</span>
