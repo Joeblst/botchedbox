@@ -247,16 +247,16 @@ def get_testcase_tests(request, testcase_id):
 
 
 def get_evaluation_problem_types(request):
-    return render(request, 'evaluation/bar_charts.html')
+    return render(request, 'evaluation/boxplot_charts.html')
 
 
 def get_evaluation_models(request):
-    return render(request, 'evaluation/bar_charts.html')
+    return render(request, 'evaluation/boxplot_charts.html')
 
 
 def get_evaluation_testcases(request):
     """Render the boxplot charts view for testcase performance."""
-    return render(request, 'evaluation/bar_charts.html')
+    return render(request, 'evaluation/boxplot_charts.html')
 
 
 def load_evaluation_problem_types(request):
@@ -450,41 +450,68 @@ def get_evaluation_table(request):
 
 
 def get_evaluation_temperatures(request):
-    return render(request, 'evaluation/line_charts.html')
+    """Render the boxplot charts view for temperature performance."""
+    return render(request, 'evaluation/boxplot_charts.html')
 
 
 def load_evaluation_temperatures(request):
-    problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
+    """Load boxplot data for temperature evaluation across models and problems."""
+    testcases = list(Test.objects.values_list('testcase_id', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
     temperatures = list(Test.objects.values_list('temperature', flat=True).distinct().order_by('temperature'))
 
     result_list = []
+    # Generate charts for each model
     for model in models:
         chart_data = []
-        for problem_type in problem_types:
-            data_points = []
-            for temp in temperatures:
-                avg_score = Test.objects.filter(
-                    problem_type=problem_type,
-                    model=model,
-                    temperature=temp,
-                    score__isnull=False
-                ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+        for temp in temperatures:
+            # Get stats for all problems at this temperature
+            queryset = Test.objects.filter(
+                model=model,
+                temperature=temp,
+                score__isnull=False
+            )
 
-                data_points.append({
-                    'temperature': temp,
-                    'score': round(float(avg_score), 2)
-                })
-
+            stats = evalutation_service.calculate_box_stats(queryset)
             chart_data.append({
-                'name': problem_type,
-                'data': data_points
+                'name': f'Temperature {temp}',
+                **stats
             })
 
         result_list.append({
-            'heading': f'Temperature Impact on {model}',
+            'heading': f'Performance Distribution for {model} Across Temperatures',
             'xaxis': 'Temperature',
-            'yaxis': 'Average Score',
+            'yaxis': 'Score Distribution',
+            'data': chart_data
+        })
+
+    # Generate charts for each testcase
+    for testcase_id in testcases:
+        chart_data = []
+        # Get testcase name for better heading
+        try:
+            testcase = Testcase.objects.get(id=testcase_id)
+            testcase_name = testcase.get_config().get('name', testcase_id)
+        except Testcase.DoesNotExist:
+            testcase_name = testcase_id
+
+        for temp in temperatures:
+            queryset = Test.objects.filter(
+                testcase_id=testcase_id,
+                temperature=temp,
+                score__isnull=False
+            )
+
+            stats = evalutation_service.calculate_box_stats(queryset)
+            chart_data.append({
+                'name': f'Temperature {temp}',
+                **stats
+            })
+
+        result_list.append({
+            'heading': f'Performance Distribution for {testcase_name} Across Temperatures',
+            'xaxis': 'Temperature',
+            'yaxis': 'Score Distribution',
             'data': chart_data
         })
 
