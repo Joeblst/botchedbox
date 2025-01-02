@@ -45,6 +45,19 @@ def load_testcases(request):
     return render(request, 'testcase/table.html', context)
 
 
+def get_testcases_list(request):
+    """Return list of available testcases."""
+    testcases = Testcase.objects.all()
+    testcase_list = []
+    for testcase in testcases:
+        config = testcase.get_config()
+        testcase_list.append({
+            'id': testcase.id,
+            'name': config.get('name', testcase.id)
+        })
+    return JsonResponse(testcase_list, safe=False)
+
+
 def testcases(request):
     context = {'testcase_infos': testcase_service.get_testcase_infos()}
     return render(request, 'testcase/default.html', context)
@@ -296,15 +309,15 @@ def load_evaluation_problem_types(request):
 
 def load_evaluation_models(request):
     temperature = request.GET.get('temperature', 0)
-    problem_types = list(Test.objects.values_list('problem_type', flat=True).distinct())
+    testcases = list(Test.objects.values_list('testcase_id', flat=True).distinct())
     models = list(Test.objects.values_list('model', flat=True).distinct())
 
     result_list = []
     for model in models:
         chart_data = []
-        for problem_type in problem_types:
+        for testcase_id in testcases:
             queryset = Test.objects.filter(
-                problem_type=problem_type,
+                testcase_id=testcase_id,
                 model=model,
                 score__isnull=False,
                 temperature=temperature
@@ -312,7 +325,7 @@ def load_evaluation_models(request):
 
             stats = evalutation_service.calculate_box_stats(queryset)
             chart_data.append({
-                'name': problem_type,
+                'name': testcase_id,
                 **stats
             })
 
@@ -450,72 +463,51 @@ def get_evaluation_table(request):
 
 
 def get_evaluation_temperatures(request):
-    """Render the boxplot charts view for temperature performance."""
-    return render(request, 'evaluation/boxplot_charts.html')
+    """Render the temperature comparison view."""
+    return render(request, 'evaluation/temperature_charts.html')
 
 
 def load_evaluation_temperatures(request):
-    """Load boxplot data for temperature evaluation across models and problems."""
-    testcases = list(Test.objects.values_list('testcase_id', flat=True).distinct())
-    models = list(Test.objects.values_list('model', flat=True).distinct())
-    temperatures = list(Test.objects.values_list('temperature', flat=True).distinct().order_by('temperature'))
+    """Load temperature comparison data for a specific testcase."""
+    testcase_id = request.GET.get('testcase')
+    if not testcase_id:
+        return JsonResponse({'error': 'Testcase ID is required'}, status=400)
 
-    result_list = []
-    # Generate charts for each model
-    for model in models:
-        chart_data = []
-        for temp in temperatures:
-            # Get stats for all problems at this temperature
+    try:
+        testcase = Testcase.objects.get(id=testcase_id)
+        testcase_name = testcase.get_config().get('name', testcase_id)
+    except Testcase.DoesNotExist:
+        return JsonResponse({'error': 'Testcase not found'}, status=404)
+
+    # Get all models and temperatures for this testcase
+    models = list(Test.objects.filter(testcase_id=testcase_id).values_list('model', flat=True).distinct())
+    temperatures = list(
+        Test.objects.filter(testcase_id=testcase_id).values_list('temperature', flat=True).distinct().order_by(
+            'temperature'))
+
+    # Collect data for each temperature and model combination
+    data = []
+    for temp in temperatures:
+        for model in models:
             queryset = Test.objects.filter(
+                testcase_id=testcase_id,
                 model=model,
                 temperature=temp,
                 score__isnull=False
             )
 
-            stats = evalutation_service.calculate_box_stats(queryset)
-            chart_data.append({
-                'name': f'Temperature {temp}',
-                **stats
-            })
-
-        result_list.append({
-            'heading': f'Performance Distribution for {model} Across Temperatures',
-            'xaxis': 'Temperature',
-            'yaxis': 'Score Distribution',
-            'data': chart_data
-        })
-
-    # Generate charts for each testcase
-    for testcase_id in testcases:
-        chart_data = []
-        # Get testcase name for better heading
-        try:
-            testcase = Testcase.objects.get(id=testcase_id)
-            testcase_name = testcase.get_config().get('name', testcase_id)
-        except Testcase.DoesNotExist:
-            testcase_name = testcase_id
-
-        for temp in temperatures:
-            queryset = Test.objects.filter(
-                testcase_id=testcase_id,
-                temperature=temp,
-                score__isnull=False
-            )
-
-            stats = evalutation_service.calculate_box_stats(queryset)
-            chart_data.append({
-                'name': f'Temperature {temp}',
-                **stats
-            })
-
-        result_list.append({
-            'heading': f'Performance Distribution for {testcase_name} Across Temperatures',
-            'xaxis': 'Temperature',
-            'yaxis': 'Score Distribution',
-            'data': chart_data
-        })
+            if queryset.exists():
+                stats = evalutation_service.calculate_box_stats(queryset)
+                data.append({
+                    'temperature': temp,
+                    'model': model,
+                    **stats
+                })
 
     return JsonResponse({
-        'maxY': 100,
-        'resultList': result_list
+        'testcase_id': testcase_id,
+        'testcase_name': testcase_name,
+        'models': models,
+        'temperatures': temperatures,
+        'data': data
     })

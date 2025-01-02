@@ -7,50 +7,37 @@ function generateColors(categories) {
     return colors;
 }
 
-function createLegend(categories, modelColors) {
-    const legendDiv = document.createElement('div');
-    legendDiv.style.display = 'flex';
-    legendDiv.style.flexWrap = 'wrap';
-    legendDiv.style.justifyContent = 'center';
-    legendDiv.style.gap = '20px';
-    legendDiv.style.padding = '20px';
-
-    categories.forEach(category => {
-        const itemDiv = document.createElement('div');
-        itemDiv.style.display = 'flex';
-        itemDiv.style.alignItems = 'center';
-        itemDiv.style.marginRight = '10px';
-
-        const colorBox = document.createElement('span');
-        colorBox.style.width = '20px';
-        colorBox.style.height = '20px';
-        colorBox.style.backgroundColor = modelColors[category];
-        colorBox.style.display = 'inline-block';
-        colorBox.style.marginRight = '5px';
-        colorBox.style.border = `1px solid ${modelColors[category].replace('0.7', '1')}`;
-
-        const label = document.createElement('span');
-        label.textContent = category;
-
-        itemDiv.appendChild(colorBox);
-        itemDiv.appendChild(label);
-        legendDiv.appendChild(itemDiv);
-    });
-
-    return legendDiv;
+function createChartContainer(id, title) {
+    const div = document.createElement('div');
+    div.className = 'card mb-4';
+    div.style.height = '100vh';
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+    div.style.boxShadow = 'none';
+    div.innerHTML = `
+        <div class="download-controls" style="position: absolute; right: 10px; top: 10px; z-index: 10;">
+            <button class="btn btn-primary btn-sm screenshot-exclude" data-chart="${id}">
+                Download
+            </button>
+        </div>
+        <div style="text-align: center; padding: 20px;">
+            <h4 class="mb-0">${title}</h4>
+        </div>
+        <div class="card-body" style="flex: 1; position: relative;">
+            <canvas id="${id}"></canvas>
+        </div>
+    `;
+    return div;
 }
 
 function createChart(containerId, chartData, maxY, modelColors) {
     const ctx = document.getElementById(containerId);
-    const temperature = document.getElementById('temperature').value;
-    const title = `${chartData.heading} (Temperature: ${temperature})`;
 
     return new Chart(ctx, {
         type: 'boxplot',
         data: {
             labels: chartData.data.map(item => item.name),
             datasets: [{
-                label: title,
                 data: chartData.data.map(item => ({
                     min: item.min,
                     q1: item.q1,
@@ -83,21 +70,26 @@ function createChart(containerId, chartData, maxY, modelColors) {
                     title: {
                         display: true,
                         text: chartData.xaxis
-                    },
-                    ticks: {
-                        maxRotation: 0,
-                        minRotation: 0
                     }
                 }
             },
             plugins: {
-                title: {
-                    display: true,
-                    text: title,
-                    font: { size: 16 },
-                    padding: 20
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        generateLabels: (chart) => {
+                            return chartData.data.map(item => ({
+                                text: item.name,
+                                fillStyle: modelColors[item.name],
+                                strokeStyle: modelColors[item.name].replace('0.7', '1'),
+                                lineWidth: 1,
+                                hidden: false,
+                                pointStyle: 'circle'
+                            }));
+                        }
+                    }
                 },
-                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: (context) => {
@@ -120,39 +112,44 @@ function createChart(containerId, chartData, maxY, modelColors) {
     });
 }
 
-function createChartContainer(id) {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.style.height = '100vh';
-    div.style.display = 'flex';
-    div.style.flexDirection = 'column';
-    div.style.margin = '0';
-    div.innerHTML = `
-        <div class="card-header" style="display: flex; justify-content: flex-end; padding: 0.5rem;">
-            <button class="btn btn-primary screenshot-btn" data-chart="${id}">
-                Download
-            </button>
-        </div>
-        <div class="card-body" style="padding-bottom: 0; flex: 1; display: flex; flex-direction: column;">
-            <div style="flex: 1; min-height: 0;">
-                <canvas id="${id}" style="width: 100%; height: 100%;"></canvas>
-            </div>
-        </div>
-        <div class="legend-container" style="padding: 1rem;"></div>
-    `;
-    return div;
+async function downloadChart(chartId) {
+    const canvas = document.getElementById(chartId);
+    const container = canvas.closest('.card');
+
+    // Hide elements with screenshot-exclude class
+    const excludedElements = container.querySelectorAll('.screenshot-exclude');
+    excludedElements.forEach(el => el.style.display = 'none');
+
+    html2canvas(container, {
+        backgroundColor: '#ffffff',
+        removeContainer: true,
+        scale: 2,
+        useCORS: true,
+        shadow: false,
+        ignoreElements: (element) => element.classList.contains('screenshot-exclude')
+    }).then(canvas => {
+        // Restore visibility of excluded elements
+        excludedElements.forEach(el => el.style.display = '');
+        const link = document.createElement('a');
+        link.download = `chart-${chartId}-screenshot.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+}
+
+function downloadAllCharts() {
+    const chartIds = Array.from(document.querySelectorAll('canvas')).map(canvas => canvas.id);
+    chartIds.forEach(id => downloadChart(id));
 }
 
 async function loadCharts(endpoint) {
     try {
-        const response = await fetch(`${endpoint}?temperature=${document.getElementById('temperature').value}`);
+        const temperature = document.getElementById('temperature').value;
+        const response = await fetch(`${endpoint}?temperature=${temperature}`);
         const data = await response.json();
 
         const container = document.getElementById('charts-container');
         container.innerHTML = '';
-        container.style.height = '100vh';
-        container.style.margin = '0';
-        container.style.padding = '0';
 
         const allCategories = new Set();
         data.resultList.forEach(chart => {
@@ -163,16 +160,9 @@ async function loadCharts(endpoint) {
 
         data.resultList.forEach((chartData, index) => {
             const chartId = `chart-${index}`;
-            const chartContainer = createChartContainer(chartId);
+            const title = `${chartData.heading} (Temperature: ${temperature})`;
+            const chartContainer = createChartContainer(chartId, title);
             container.appendChild(chartContainer);
-
-            // Create and append legend
-            const legend = createLegend(
-                chartData.data.map(item => item.name),
-                categoryColors
-            );
-            chartContainer.querySelector('.legend-container').appendChild(legend);
-
             createChart(chartId, chartData, data.maxY, categoryColors);
         });
     } catch (error) {
@@ -182,46 +172,17 @@ async function loadCharts(endpoint) {
     }
 }
 
-function downloadScreenshot(chartId) {
-    const canvas = document.getElementById(chartId);
-    const legendContainer = canvas.closest('.card').querySelector('.legend-container');
-
-    // Create a temporary canvas to combine chart and legend
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-
-    // Calculate the required height for the combined image
-    const legendHeight = legendContainer.offsetHeight;
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height + legendHeight;
-
-    // Draw the chart
-    tempCtx.fillStyle = 'white';
-    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-    tempCtx.drawImage(canvas, 0, 0);
-
-    // Draw the legend
-    // Convert legend container to canvas using html2canvas
-    html2canvas(legendContainer).then(legendCanvas => {
-        tempCtx.drawImage(legendCanvas, 0, canvas.height);
-
-        // Create download link
-        const link = document.createElement('a');
-        link.download = `chart-${chartId}-screenshot.png`;
-        link.href = tempCanvas.toDataURL('image/png');
-        link.click();
-    });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     loadCharts('load/');
+
+    // Add event listener for temperature filter
     document.getElementById('temperature').addEventListener('change', () => loadCharts('load/'));
 
     // Add click handlers for screenshot buttons
     document.addEventListener('click', (e) => {
-        if (e.target.matches('.screenshot-btn')) {
+        if (e.target.matches('.screenshot-exclude')) {
             const chartId = e.target.getAttribute('data-chart');
-            downloadScreenshot(chartId);
+            downloadChart(chartId);
         }
     });
 });

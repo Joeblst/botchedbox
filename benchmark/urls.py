@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.index, name="index"),
     path('testcases/', views.testcases, name="get_testcases"),
     path('testcases/load/', views.load_testcases, name="load_testcases"),
+    path('testcases/list/', views.get_testcases_list, name="list_testcases"),
     path('testcases/<str:testcase_id>/delete/', views.delete_testcase, name='delete_testcase'),
     path('testcases/<str:testcase_id>/toggle/', views.toggle_testcase, name='toggle_testcase'),
     path('testcases/<str:testcase_id>/tests/', views.get_testcase_tests, name='get_testcase_tests'),
