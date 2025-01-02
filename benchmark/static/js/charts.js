@@ -128,6 +128,11 @@ function createChartContainer(id) {
     div.style.flexDirection = 'column';
     div.style.margin = '0';
     div.innerHTML = `
+        <div class="card-header" style="display: flex; justify-content: flex-end; padding: 0.5rem;">
+            <button class="btn btn-primary screenshot-btn" data-chart="${id}">
+                Download
+            </button>
+        </div>
         <div class="card-body" style="padding-bottom: 0; flex: 1; display: flex; flex-direction: column;">
             <div style="flex: 1; min-height: 0;">
                 <canvas id="${id}" style="width: 100%; height: 100%;"></canvas>
@@ -177,7 +182,46 @@ async function loadCharts(endpoint) {
     }
 }
 
+function downloadScreenshot(chartId) {
+    const canvas = document.getElementById(chartId);
+    const legendContainer = canvas.closest('.card').querySelector('.legend-container');
+
+    // Create a temporary canvas to combine chart and legend
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Calculate the required height for the combined image
+    const legendHeight = legendContainer.offsetHeight;
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height + legendHeight;
+
+    // Draw the chart
+    tempCtx.fillStyle = 'white';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    tempCtx.drawImage(canvas, 0, 0);
+
+    // Draw the legend
+    // Convert legend container to canvas using html2canvas
+    html2canvas(legendContainer).then(legendCanvas => {
+        tempCtx.drawImage(legendCanvas, 0, canvas.height);
+
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `chart-${chartId}-screenshot.png`;
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadCharts('load/');
     document.getElementById('temperature').addEventListener('change', () => loadCharts('load/'));
+
+    // Add click handlers for screenshot buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('.screenshot-btn')) {
+            const chartId = e.target.getAttribute('data-chart');
+            downloadScreenshot(chartId);
+        }
+    });
 });
