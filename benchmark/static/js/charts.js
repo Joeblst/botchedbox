@@ -7,6 +7,39 @@ function generateColors(categories) {
     return colors;
 }
 
+function createLegend(categories, modelColors) {
+    const legendDiv = document.createElement('div');
+    legendDiv.style.display = 'flex';
+    legendDiv.style.flexWrap = 'wrap';
+    legendDiv.style.justifyContent = 'center';
+    legendDiv.style.gap = '20px';
+    legendDiv.style.padding = '20px';
+
+    categories.forEach(category => {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.display = 'flex';
+        itemDiv.style.alignItems = 'center';
+        itemDiv.style.marginRight = '10px';
+
+        const colorBox = document.createElement('span');
+        colorBox.style.width = '20px';
+        colorBox.style.height = '20px';
+        colorBox.style.backgroundColor = modelColors[category];
+        colorBox.style.display = 'inline-block';
+        colorBox.style.marginRight = '5px';
+        colorBox.style.border = `1px solid ${modelColors[category].replace('0.7', '1')}`;
+
+        const label = document.createElement('span');
+        label.textContent = category;
+
+        itemDiv.appendChild(colorBox);
+        itemDiv.appendChild(label);
+        legendDiv.appendChild(itemDiv);
+    });
+
+    return legendDiv;
+}
+
 function createChart(containerId, chartData, maxY, modelColors) {
     const ctx = document.getElementById(containerId);
     const temperature = document.getElementById('temperature').value;
@@ -69,7 +102,9 @@ function createChart(containerId, chartData, maxY, modelColors) {
                     callbacks: {
                         label: (context) => {
                             const item = context.raw;
+                            const modelName = chartData.data[context.dataIndex].name;
                             return [
+                                `Model: ${modelName}`,
                                 `Min: ${item.min.toFixed(1)}`,
                                 `Q1: ${item.q1.toFixed(1)}`,
                                 `Median: ${item.median.toFixed(1)}`,
@@ -87,11 +122,18 @@ function createChart(containerId, chartData, maxY, modelColors) {
 
 function createChartContainer(id) {
     const div = document.createElement('div');
-    div.className = 'card mb-4';
+    div.className = 'card';
+    div.style.height = '100vh';
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+    div.style.margin = '0';
     div.innerHTML = `
-        <div class="card-body">
-            <canvas id="${id}" style="width: 100%; height: 60vh;"></canvas>
+        <div class="card-body" style="padding-bottom: 0; flex: 1; display: flex; flex-direction: column;">
+            <div style="flex: 1; min-height: 0;">
+                <canvas id="${id}" style="width: 100%; height: 100%;"></canvas>
+            </div>
         </div>
+        <div class="legend-container" style="padding: 1rem;"></div>
     `;
     return div;
 }
@@ -103,6 +145,9 @@ async function loadCharts(endpoint) {
 
         const container = document.getElementById('charts-container');
         container.innerHTML = '';
+        container.style.height = '100vh';
+        container.style.margin = '0';
+        container.style.padding = '0';
 
         const allCategories = new Set();
         data.resultList.forEach(chart => {
@@ -115,6 +160,14 @@ async function loadCharts(endpoint) {
             const chartId = `chart-${index}`;
             const chartContainer = createChartContainer(chartId);
             container.appendChild(chartContainer);
+
+            // Create and append legend
+            const legend = createLegend(
+                chartData.data.map(item => item.name),
+                categoryColors
+            );
+            chartContainer.querySelector('.legend-container').appendChild(legend);
+
             createChart(chartId, chartData, data.maxY, categoryColors);
         });
     } catch (error) {
