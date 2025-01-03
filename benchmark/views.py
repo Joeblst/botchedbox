@@ -435,30 +435,38 @@ def load_evaluation_summary(request):
 
 
 def get_evaluation_table(request):
-    temperature = request.GET.get('temperature', 0)
-    problems = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    from django.db.models import Avg, StdDev
+
+    # Get all unique models and temperatures
     models = list(Test.objects.values_list('model', flat=True).distinct())
+    temperatures = list(Test.objects.values_list('temperature', flat=True).distinct().order_by('temperature'))
 
-    table_data = []
-    for problem in problems:
-        scores = []
-        for model in models:
-            avg_score = Test.objects.filter(
-                testcase_id=problem,
+    # Create a nested dictionary to store statistics for each model/temperature combination
+    model_stats = {}
+    for model in models:
+        model_stats[model] = {}
+        for temp in temperatures:
+            stats = Test.objects.filter(
                 model=model,
-                score__isnull=False,
-                temperature=temperature
-            ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
-            scores.append(round(float(avg_score), 2))
+                temperature=temp,
+                score__isnull=False
+            ).aggregate(
+                mean=Avg('score'),
+                stddev=StdDev('score')
+            )
 
-        table_data.append({
-            'problem': problem,
-            'scores': scores
-        })
+            if stats['mean'] is not None:
+                model_stats[model][temp] = {
+                    'mean': round(float(stats['mean']), 1),
+                    'stddev': round(float(stats['stddev'] or 0), 1)
+                }
+            else:
+                model_stats[model][temp] = None
 
     return render(request, 'evaluation/summary_table.html', {
         'models': models,
-        'table_data': table_data
+        'temperatures': temperatures,
+        'model_stats': model_stats
     })
 
 
@@ -510,4 +518,66 @@ def load_evaluation_temperatures(request):
         'models': models,
         'temperatures': temperatures,
         'data': data
+    })
+
+
+def get_evaluation_numbers(request):
+    """Display statistical analysis of model performance."""
+    from django.db.models import Avg, StdDev, Count
+
+    # Get all distinct values
+    testcases = list(Test.objects.values_list('testcase_id', flat=True).distinct())
+    models = list(Test.objects.values_list('model', flat=True).distinct())
+    temperatures = list(Test.objects.values_list('temperature', flat=True).distinct().order_by('temperature'))
+
+    result_data = []
+
+    for testcase_id in testcases:
+        try:
+            testcase = Testcase.objects.get(id=testcase_id)
+            testcase_name = testcase.get_config().get('name', testcase_id)
+        except Testcase.DoesNotExist:
+            testcase_name = testcase_id
+
+        testcase_data = {
+            'testcase_id': testcase_id,
+            'testcase_name': testcase_name,
+            'models': []
+        }
+
+        for model in models:
+            model_data = {
+                'model': model,
+                'temperatures': []
+            }
+
+            for temp in temperatures:
+                # Get statistics for this combination
+                stats = Test.objects.filter(
+                    testcase_id=testcase_id,
+                    model=model,
+                    temperature=temp,
+                    score__isnull=False
+                ).aggregate(
+                    mean=Avg('score'),
+                    stddev=StdDev('score'),
+                    count=Count('id')
+                )
+
+                if stats['count'] > 0:
+                    model_data['temperatures'].append({
+                        'temperature': temp,
+                        'mean': round(float(stats['mean'] or 0), 2),
+                        'stddev': round(float(stats['stddev'] or 0), 2),
+                        'count': stats['count']
+                    })
+
+            if any(temp['count'] > 0 for temp in model_data['temperatures']):
+                testcase_data['models'].append(model_data)
+
+        if testcase_data['models']:  # Only add if there's data
+            result_data.append(testcase_data)
+
+    return render(request, 'evaluation/numbers.html', {
+        'testcases': result_data
     })

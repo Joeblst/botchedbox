@@ -10,7 +10,7 @@ function generateColors(categories) {
 function createChartContainer(id, title) {
     const div = document.createElement('div');
     div.className = 'card mb-4';
-    div.style.height = '100vh';
+    div.style.height = '60vh';
     div.style.display = 'flex';
     div.style.flexDirection = 'column';
     div.style.boxShadow = 'none';
@@ -44,7 +44,8 @@ function createChart(containerId, chartData, maxY, modelColors) {
                     median: item.median,
                     q3: item.q3,
                     max: item.max,
-                    mean: item.mean
+                    mean: item.mean,
+                    std: item.std
                 })),
                 backgroundColor: chartData.data.map(item => modelColors[item.name]),
                 borderColor: chartData.data.map(item => modelColors[item.name].replace('0.7', '1')),
@@ -101,6 +102,7 @@ function createChart(containerId, chartData, maxY, modelColors) {
                                 `Q1: ${item.q1.toFixed(1)}`,
                                 `Median: ${item.median.toFixed(1)}`,
                                 `Mean: ${item.mean.toFixed(1)}`,
+                                `Std Dev: ${item.std.toFixed(2)}`,
                                 `Q3: ${item.q3.toFixed(1)}`,
                                 `Max: ${item.max.toFixed(1)}`
                             ];

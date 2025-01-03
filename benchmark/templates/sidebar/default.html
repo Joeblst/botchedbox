@@ -61,6 +61,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{% url 'get_evaluation_numbers' %}" class="nav-link text-white {% if '/numbers' in request.path %}active{% endif %}">
+                        {% bs_icon 'calculator' size='1.1em' extra_classes='nav-icon' %}
+                        <span>Numbers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{% url 'get_evaluation_summary' %}" class="nav-link text-white {% if '/summary' in request.path %}active{% endif %}">
                         {% bs_icon 'graph-up' size='1.1em' extra_classes='nav-icon' %}
                         <span>Summary</span>

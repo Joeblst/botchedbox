@@ -1,0 +1,49 @@
+{% extends "pagelayout.html" %}
+{% load bootstrap_icons %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Statistical Analysis</h1>
+            
+            {% for testcase in testcases %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ testcase.testcase_name }} ({{ testcase.testcase_id }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for model in testcase.models %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">{{ model.model }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Temperature</th>
+                                        <th>Mean Score</th>
+                                        <th>Standard Deviation</th>
+                                        <th>Sample Size</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for temp in model.temperatures %}
+                                    <tr>
+                                        <td>{{ temp.temperature }}</td>
+                                        <td>{{ temp.mean|floatformat:2 }}</td>
+                                        <td>{{ temp.stddev|floatformat:2 }}</td>
+                                        <td>{{ temp.count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

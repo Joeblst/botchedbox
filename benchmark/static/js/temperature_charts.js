@@ -10,7 +10,7 @@ function generateColors(categories) {
 function createChartContainer(id) {
     const div = document.createElement('div');
     div.className = 'card mb-4';
-    div.style.height = '100vh';
+    div.style.height = '60vh';
     div.style.display = 'flex';
     div.style.flexDirection = 'column';
     div.style.boxShadow = 'none';
@@ -45,7 +45,8 @@ function createChart(containerId, chartData, modelColors) {
                 median: dataPoint.median,
                 q3: dataPoint.q3,
                 max: dataPoint.max,
-                mean: dataPoint.mean
+                mean: dataPoint.mean,
+                std: dataPoint.std
             } : null;
         });
     });
@@ -110,6 +111,7 @@ function createChart(containerId, chartData, modelColors) {
                                 `Q1: ${stats.q1.toFixed(1)}`,
                                 `Median: ${stats.median.toFixed(1)}`,
                                 `Mean: ${stats.mean.toFixed(1)}`,
+                                `Std Dev: ${stats.std.toFixed(2)}`,
                                 `Q3: ${stats.q3.toFixed(1)}`,
                                 `Max: ${stats.max.toFixed(1)}`
                             ];

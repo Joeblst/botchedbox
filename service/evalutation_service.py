@@ -10,7 +10,8 @@ def calculate_box_stats(queryset):
             'median': 0,
             'q3': 0,
             'max': 0,
-            'mean': 0
+            'mean': 0,
+            'std': 0
         }
 
     scores = list(queryset.values_list('score', flat=True))
@@ -23,7 +24,8 @@ def calculate_box_stats(queryset):
             'median': 0,
             'q3': 0,
             'max': 0,
-            'mean': 0
+            'mean': 0,
+            'std': 0
         }
 
     return {
@@ -32,5 +34,6 @@ def calculate_box_stats(queryset):
         'median': float(np.percentile(scores, 50)),
         'q3': float(np.percentile(scores, 75)),
         'max': float(np.max(scores)),
-        'mean': float(np.mean(scores))
+        'mean': float(np.mean(scores)),
+        'std': float(np.std(scores))
     }

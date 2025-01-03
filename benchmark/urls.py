@@ -29,4 +29,5 @@ urlpatterns = [
     path('evaluation/summary/', views.get_evaluation_summary, name='get_evaluation_summary'),
     path('evaluation/summary/load/', views.load_evaluation_summary, name='load_evaluation_summary'),
     path('evaluation/summary/table/', views.get_evaluation_table, name='get_evaluation_table'),
+    path('evaluation/numbers/', views.get_evaluation_numbers, name='get_evaluation_numbers'),
 ]
