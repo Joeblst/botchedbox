@@ -95,7 +95,7 @@ class NFTablesSimulator:
             if rule.in_interface and package.in_if != rule.in_interface:
                 continue
 
-            if rule.out_interface and package.out_if != rule.in_interface:
+            if rule.out_interface and package.out_if != rule.out_interface:
                 continue
 
             if not check_ip_match(rule.source, package.source):
