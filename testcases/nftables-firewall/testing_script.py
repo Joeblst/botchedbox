@@ -17,10 +17,11 @@ def verify(testcase: Testcase, response: Response) -> int:
     score = 0
     for package in packages:
         try:
-            if simulator.evaluate_package(package):
+            action = simulator.evaluate_package(package)
+            if action == package.expected:
                 score += 1
             else:
-                issues.append("- " + package.__str__() + f" expected {package.expected.value}")
+                issues.append("- " + package.__str__() + f" expected {package.expected.value} got {action.value}")
         except Exception as e:
             issues.append("- " + str(e))
     if issues:
@@ -34,7 +35,8 @@ def create_packages() -> List[Package]:
     return [
         # Default Deny Check
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth1',
             source='8.8.8.8',
             destination='10.0.0.2',
             protocol=Protocol.TCP,
@@ -44,7 +46,8 @@ def create_packages() -> List[Package]:
         ),
         # Internal to DMZ check
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.0.0.2',
             destination='172.16.20.20',
             protocol=Protocol.TCP,
@@ -53,7 +56,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.0.0.2',
             destination='172.16.20.30',
             protocol=Protocol.UDP,
@@ -62,7 +66,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='eth1',
             source='172.16.20.20',
             destination='10.0.0.2',
             protocol=Protocol.TCP,
@@ -71,7 +76,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='eth1',
             source='172.16.20.20',
             destination='10.0.0.2',
             protocol=Protocol.TCP,
@@ -81,7 +87,8 @@ def create_packages() -> List[Package]:
         ),
         # Management check
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.0.0.2',
             destination='172.16.20.30',
             protocol=Protocol.TCP,
@@ -90,7 +97,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.1.0.80',
             destination='172.16.20.30',
             protocol=Protocol.TCP,
@@ -99,7 +107,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.30',
             protocol=Protocol.TCP,
@@ -109,7 +118,8 @@ def create_packages() -> List[Package]:
         ),
         # Application Proxy check
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='wan0',
             source='10.0.0.2',
             destination='8.8.8.8',
             protocol=Protocol.TCP,
@@ -118,7 +128,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='wan0',
             source='172.16.20.50',
             destination='8.8.8.8',
             protocol=Protocol.TCP,
@@ -127,7 +138,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.0.0.2',
             destination='172.16.20.50',
             protocol=Protocol.TCP,
@@ -136,7 +148,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth1',
+            in_if='eth1',
+            out_if='eth0',
             source='10.0.0.2',
             destination='172.16.20.50',
             protocol=Protocol.TCP,
@@ -145,7 +158,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='eth1',
             source='172.16.20.50',
             destination='10.0.0.2',
             protocol=Protocol.TCP,
@@ -155,7 +169,8 @@ def create_packages() -> List[Package]:
         ),
         # DMZ check
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='wan0',
             source='172.16.20.10',
             destination='8.8.8.8',
             protocol=Protocol.TCP,
@@ -164,7 +179,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='wan0',
             source='172.16.20.11',
             destination='8.8.8.8',
             protocol=Protocol.TCP,
@@ -173,7 +189,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='wan0',
             source='172.16.20.20',
             destination='8.8.8.8',
             protocol=Protocol.TCP,
@@ -182,7 +199,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.20',
             protocol=Protocol.TCP,
@@ -191,7 +209,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.20',
             protocol=Protocol.TCP,
@@ -200,7 +219,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.30',
             protocol=Protocol.TCP,
@@ -209,7 +229,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.30',
             protocol=Protocol.TCP,
@@ -218,7 +239,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='wan0',
             source='172.16.20.30',
             destination='8.8.8.8',
             protocol=Protocol.UDP,
@@ -228,7 +250,8 @@ def create_packages() -> List[Package]:
         ),
         # Webserver Check
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='eth0',
             source='172.16.20.100',
             destination='172.16.20.10',
             protocol=Protocol.TCP,
@@ -237,7 +260,8 @@ def create_packages() -> List[Package]:
             expected=Action.ACCEPT,
         ),
         Package(
-            interface='eth0',
+            in_if='eth0',
+            out_if='eth0',
             source='172.16.20.100',
             destination='172.16.20.11',
             protocol=Protocol.TCP,
@@ -246,7 +270,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.11',
             protocol=Protocol.TCP,
@@ -255,7 +280,8 @@ def create_packages() -> List[Package]:
             expected=Action.DROP,
         ),
         Package(
-            interface='wan0',
+            in_if='wan0',
+            out_if='eth0',
             source='8.8.8.8',
             destination='172.16.20.100',
             protocol=Protocol.TCP,

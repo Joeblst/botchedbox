@@ -79,10 +79,10 @@ class NFTablesSimulator:
 
         return self.rules
 
-    def evaluate_package(self, package: Package) -> bool:
-        if package.interface.startswith("lo"):
+    def evaluate_package(self, package: Package) -> Action:
+        if package.in_if.startswith("lo"):
             chain = Chain.INPUT
-        elif package.interface.startswith("eth") or package.interface.startswith("wan0"):
+        elif package.in_if.startswith("eth") or package.in_if.startswith("wan0"):
             chain = Chain.FORWARD
         else:
             chain = Chain.OUTPUT
@@ -92,7 +92,10 @@ class NFTablesSimulator:
             if rule.chain != chain:
                 continue
 
-            if rule.in_interface and package.interface != rule.in_interface:
+            if rule.in_interface and package.in_if != rule.in_interface:
+                continue
+
+            if rule.out_interface and package.out_if != rule.in_interface:
                 continue
 
             if not check_ip_match(rule.source, package.source):
@@ -113,7 +116,7 @@ class NFTablesSimulator:
             action = rule.action
             break
 
-        return package.expected == action
+        return action
 
 
 def _find_value(parts: List[str], keywords: List[str]) -> Optional[str]:

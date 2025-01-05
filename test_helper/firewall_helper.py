@@ -33,7 +33,8 @@ class Protocol(Enum):
 
 @dataclass
 class Package:
-    interface: str
+    in_if: str
+    out_if: str
     source: str
     destination: str
     protocol: Protocol
@@ -42,7 +43,7 @@ class Package:
     expected: Action
 
     def __str__(self) -> str:
-        return (f"Package({self.interface}, {self.source} -> {self.destination}, "
+        return (f"Package({self.in_if}, {self.out_if}, {self.source} -> {self.destination}, "
                 f"{self.protocol}:{self.port}, state={self.state}, expected={self.expected})")
 
 
