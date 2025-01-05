@@ -119,6 +119,7 @@
                     <tr>
                         <th scope="col" class="ps-4">Benchmark ID</th>
                         <th scope="col">Model</th>
+                        <th scope="col">Temperature</th>
                         <th scope="col">Score</th>
                         <th scope="col">Status</th>
                         <th scope="col">Validation</th>
@@ -139,6 +140,9 @@
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">
                                     {{ test.model }}
                                 </span>
+                                </td>
+                                <td>
+                                    {{ test.temperature }}
                                 </td>
                                 <td>
                                     {% if test.score is not None %}
