@@ -13,6 +13,7 @@ class NFTablesSimulator:
         self.rules: List[Rule] = []
 
     def parse_rules(self, content: str) -> List[Rule]:
+        """ To simulate the firewall we need to parse the rules in a filter """
         if len(self.rules) > 0:
             self.rules = []
 
@@ -80,6 +81,7 @@ class NFTablesSimulator:
         return self.rules
 
     def evaluate_package(self, package: Package) -> Action:
+        """ Run package through the firewall """
         if package.in_if.startswith("lo"):
             chain = Chain.INPUT
         elif package.in_if.startswith("eth") or package.in_if.startswith("wan0"):

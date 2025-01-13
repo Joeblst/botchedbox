@@ -52,11 +52,6 @@ def check_permission_level(actual: Optional[str], required: Optional[str],
                            comparison: PermissionComparison) -> bool:
     """
     Check if permission meets the required level based on comparison type
-
-    Args:
-        actual: Actual permission level (or None if entry doesn't exist)
-        required: Required permission level
-        comparison: Type of comparison to perform
     """
     # Handle cases where entry doesn't exist
     if actual is None:
@@ -74,8 +69,8 @@ def check_permission_level(actual: Optional[str], required: Optional[str],
     elif comparison == PermissionComparison.OR_LOWER:
         return actual_level <= required_level
     elif comparison == PermissionComparison.MISSING_OK:
-        return actual_level <= required_level  # Changed to allow equal or lower permissions
-    else:  # EXACT
+        return actual_level <= required_level
+    else:
         return actual_level == required_level
 
 

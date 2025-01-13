@@ -1,3 +1,8 @@
+/**
+ * Ensure all models have the same color
+ * @param categories
+ * @returns {{}}
+ */
 function generateColors(categories) {
     const colors = {};
     categories.forEach((category, index) => {
@@ -7,6 +12,12 @@ function generateColors(categories) {
     return colors;
 }
 
+/**
+ * Places the container for the charts
+ * @param id
+ * @param title
+ * @returns {HTMLDivElement}
+ */
 function createChartContainer(id, title) {
     const div = document.createElement('div');
     div.className = 'card mb-4';
@@ -30,9 +41,18 @@ function createChartContainer(id, title) {
     return div;
 }
 
+/**
+ * Create the chart
+ * @param containerId
+ * @param chartData
+ * @param maxY
+ * @param modelColors
+ * @returns {Chart}
+ */
 function createChart(containerId, chartData, maxY, modelColors) {
     const ctx = document.getElementById(containerId);
 
+    // Configure Chart and set Data
     return new Chart(ctx, {
         type: 'boxplot',
         data: {
@@ -114,6 +134,11 @@ function createChart(containerId, chartData, maxY, modelColors) {
     });
 }
 
+/**
+ * Create screenshots
+ * @param chartId
+ * @returns {Promise<void>}
+ */
 async function downloadChart(chartId) {
     const canvas = document.getElementById(chartId);
     const container = canvas.closest('.card');

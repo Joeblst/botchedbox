@@ -16,6 +16,7 @@ class IPTablesSimulator:
         self.rules = []
 
     def parse_rules(self, content: str) -> List[Rule]:
+        """ To simulate the firewall we need to parse the rules in a filter """
         saved_format = False
         if len(self.rules) > 0:
             self.rules = []
@@ -100,6 +101,7 @@ class IPTablesSimulator:
         return self.rules
 
     def evaluate_package(self, package: Package) -> Action:
+        """ Run package through the firewall """
         if package.in_if.startswith("lo"):
             chain = Chain.INPUT
         elif package.in_if.startswith("eth") or package.in_if.startswith("wan0"):
@@ -149,6 +151,7 @@ def _find_value(haystack: List[str], needles: List[str]) -> str | None:
 
 
 def _find_ips(line: str, options: List[str]) -> Optional[List[str]]:
+    """Find a value in parts list after any of the keywords."""
     if not any(opt in line for opt in options):
         return None
 

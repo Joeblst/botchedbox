@@ -22,6 +22,7 @@ class SambaConfig:
 
 class SambaConfigParser:
     def parse_string(self, config_text: str) -> SambaConfig:
+        """ Because we have inheritance it is efficient to use objects to simulate that """
         lines = config_text.split('\n')
         current_section = None
         global_options = {}

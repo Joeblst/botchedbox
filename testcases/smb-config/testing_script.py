@@ -25,7 +25,6 @@ def verify(testcase: Testcase, response: Response) -> int:
 
     response.set_valid(True)
 
-    # Global security checks
     global_checks = [
         (check_authentication, "Authentication Settings"),
         (check_protocol_security, "Protocol Security"),
@@ -38,7 +37,6 @@ def verify(testcase: Testcase, response: Response) -> int:
         (check_general_security, "General Security Settings")
     ]
 
-    # Run global checks
     for check_func, check_name in global_checks:
         check_score = check_func(config.global_options, issues)
         score += check_score

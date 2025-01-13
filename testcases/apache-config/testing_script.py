@@ -472,14 +472,7 @@ def check_user_not_root(response: Response) -> int:
 
 def check_directory_options_no_includes(response) -> int:
     """
-    Checks if every <Directory> block does not include "Includes" in the "Options" directive,
-    but allows "-Includes".
-
-    Parameters:
-    - response (Response): The response object containing the configuration text.
-
-    Returns:
-    - int: 0 if no <Directory> block contains "Includes" (while allowing "-Includes"), 1 if any do.
+    Checks if every <Directory> block does allow Includes
     """
     global test_counts
     test_counts += 1
@@ -505,13 +498,7 @@ def check_directory_options_no_includes(response) -> int:
 
 def check_server_status_and_info_commented_out(response) -> int:
     """
-    Checks if the <Location /server-status> and <Location /server-info> blocks are commented out or properly secured.
-
-    Parameters:
-    - response (Response): The response object containing the configuration text.
-
-    Returns:
-    - int: A score where 1 point is given for each compliant directive, up to a maximum of 2.
+    Checks if the <Location /server-status> and <Location /server-info> blocks are disabled
     """
     global test_counts
     test_counts += 2
@@ -551,12 +538,6 @@ def check_trace_disabled(response) -> int:
     Checks if TRACE is disabled by verifying:
     1. 'TraceEnable' is set to 'off', or
     2. Every <Directory> block contains a <LimitExcept> directive that disables 'TRACE'.
-
-    Parameters:
-    - response (Response): The response object containing the configuration text.
-
-    Returns:
-    - int: A score where 1 point is given for each compliant check, up to a maximum of 2.
     """
     global test_counts
     test_counts += 2
@@ -606,12 +587,6 @@ def check_security_headers(response) -> int:
     - Header always set X-XSS-Protection "1; mode=block"
     - Header always set X-Content-Type-Options "nosniff"
     - Header always set Content-Security-Policy "default-src 'self';" or "frame-ancestors 'self'"
-
-    Parameters:
-    - response (Response): The response object containing the configuration text.
-
-    Returns:
-    - int: A score where 1 point is given for each compliant configuration, up to a maximum of 5.
     """
     global test_counts
     test_counts += 5
@@ -643,14 +618,6 @@ def check_ssl_configuration(response) -> int:
     1. SSLProtocol allows only secure protocols (TLSv1.2 and TLSv1.3) or disables insecure ones
     2. SSLHonorCipherOrder is set to On
     3. SSLCipherSuite is properly configured with secure ciphers
-
-    Supports both additive (+TLSv1.2 +TLSv1.3) and subtractive (-SSLv3 -TLSv1) approaches.
-
-    Parameters:
-    - response (Response): The response object containing the configuration text
-
-    Returns:
-    - int: Score from 0-3 based on compliance
     """
     global test_counts
     test_counts += 3

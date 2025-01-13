@@ -333,6 +333,7 @@ def check_password_authentication(ssh_test: str, issues: List[str]) -> int:
 
 
 def check_match_blocks(match_block: MatchBlock) -> Tuple[int, List[str]]:
+    """Check if match blocks are configured as expected"""
     global test_count
     test_count += 4
     score = 0
