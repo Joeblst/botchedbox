@@ -1,0 +1,29 @@
+credentials:
+  llama3.1:
+    api: "openai"
+    base_url: "http://host.docker.internal:11434/v1/"
+    api_key: "ollama"
+  mistral:
+    api: "openai"
+    base_url: "http://host.docker.internal:11434/v1/"
+    api_key: "ollama"
+  gpt-4o:
+    api: "openai"
+    base_url: "https://api.openai.com/v1/"
+    api_key: ${OPENAI_KEY}
+  gpt-3.5-turbo:
+    api: "openai"
+    base_url: "https://api.openai.com/v1/"
+    api_key: ${OPENAI_KEY}
+  o1-mini:
+    api: "openai"
+    base_url: "https://api.openai.com/v1/"
+    api_key: ${OPENAI_KEY}
+  claude-3-5-sonnet-20241022:
+    api: "anthropic"
+    base_url: "https://api.anthropic.com"
+    api_key: ${ANTHROPIC_KEY}
+  gemini-1.5-pro:
+    api: "openai"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    api_key: ${GOOGLE_KEY}
